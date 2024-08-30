@@ -178,14 +178,13 @@ impl Committee {
 
     /// Returns the stake required for a transaction to be labelled as fixed (N - 2f)
     pub fn fixed_tx_threshold(&self) -> Stake {
-        let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
-        total_votes / 3 + 1
+        self.validity_threshold()
     }
 
     /// Returns the stake threshold for a transaction to be labelled as pending
     pub fn pending_tx_threshold(&self, gamma: f64) -> Stake {
         let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
-        (total_votes as f64 * (1 as f64 - gamma)) as u32 + (total_votes / 3 + 1)
+        (total_votes as f64 * (1 as f64 - gamma)) as u32 + self.validity_threshold()
     }
 
     /// Returns the stake required to reach availability (f+1).
