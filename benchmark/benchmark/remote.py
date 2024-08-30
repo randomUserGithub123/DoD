@@ -10,11 +10,13 @@ from math import ceil
 from copy import deepcopy
 import subprocess
 
+from benchmark.local import LocalBench, USE_FAIRNESS_PARSER
 from benchmark.config import Committee, Key, NodeParameters, BenchParameters, ConfigError
 from benchmark.utils import BenchError, Print, PathMaker, progress_bar
 from benchmark.commands import CommandMaker
 from benchmark.logs import LogParser, ParseError
 from benchmark.instance import InstanceManager, CloudLabInstanceManager
+from benchmark.fairness_logs import FairnessParseError, FairnessLogParser
 
 
 class FabricError(Exception):
@@ -316,7 +318,10 @@ class Bench:
 
         # Parse logs and return the parser.
         Print.info('Parsing logs and computing performance...')
-        return LogParser.process(PathMaker.logs_path(), faults=faults)
+        if USE_FAIRNESS_PARSER:
+            return FairnessLogParser.process(PathMaker.logs_path(), faults=faults)
+        else:
+            return LogParser.process(PathMaker.logs_path(), faults=faults)
 
     def run(self, bench_parameters_dict, node_parameters_dict, debug=False):
         assert isinstance(debug, bool)
@@ -345,7 +350,7 @@ class Bench:
             committee = self._config(
                 selected_hosts, node_parameters, bench_parameters
             )
-        except (subprocess.SubprocessError, GroupException) as e:
+        except (subprocess.SubprocessError, GroupException, FairnessParseError if USE_FAIRNESS_PARSER else ParseError) as e:
             e = FabricError(e) if isinstance(e, GroupException) else e
             raise BenchError('Failed to configure nodes', e)
 
@@ -701,7 +706,10 @@ class CloudLabBench:
 
         # Parse logs and return the parser.
         Print.info('Parsing logs and computing performance...')
-        return LogParser.process(PathMaker.logs_path(), faults=faults)
+        if USE_FAIRNESS_PARSER:
+            return FairnessLogParser.process(PathMaker.logs_path(), faults=faults)
+        else:
+            return LogParser.process(PathMaker.logs_path(), faults=faults)
 
 
     def run(self, bench_parameters_dict, node_parameters_dict, debug=False):
@@ -765,7 +773,7 @@ class CloudLabBench:
                             r, 
                             bench_parameters.tx_size, 
                         ))
-                    except (subprocess.SubprocessError, GroupException, ParseError) as e:
+                    except (subprocess.SubprocessError, GroupException, FairnessParseError if USE_FAIRNESS_PARSER else ParseError) as e:
                         self.kill(hosts=selected_hosts)
                         if isinstance(e, GroupException):
                             e = FabricError(e)
