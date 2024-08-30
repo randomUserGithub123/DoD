@@ -19,7 +19,6 @@ use futures::sink::SinkExt as _;
 use log::{error, info, warn};
 use network::{MessageHandler, Receiver, Writer};
 use primary::PrimaryWorkerMessage;
-use rand::distributions::Gamma;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use store::Store;
