@@ -62,6 +62,8 @@ pub struct GlobalOrderMaker{
     workers_addresses: Vec<(PublicKey, SocketAddr)>,
     /// A network sender to broadcast the batches to the other workers.
     network: ReliableSender,
+    // Fairness factor
+    gamma: f64,
 }
 
 
@@ -77,6 +79,7 @@ impl GlobalOrderMaker {
         // tx_digest: Sender<SerializedBatchDigestMessage>,
         tx_message: Sender<GlobalOrderQuorumWaiterMessage>,
         workers_addresses: Vec<(PublicKey, SocketAddr)>,
+        gamma: f64,
     ) {
         tokio::spawn(async move {
             Self {
@@ -92,6 +95,7 @@ impl GlobalOrderMaker {
                 tx_message,
                 workers_addresses,
                 network: ReliableSender::new(),
+                gamma,
             }
             .run()
             .await;
@@ -142,7 +146,9 @@ impl GlobalOrderMaker {
             if send_order{
                 // TODO: Pending and fixed transaction threshold
                 // create a Global Order based on n-f received local orders 
-                let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(self.local_order_dags.clone(), 0.0, 0.0); // 3.0, 2.5
+                let fixed_tx_threshold = self.committee.fixed_tx_threshold();
+                let pending_tx_threshold = self.committee.pending_tx_threshold(self.gamma);
+                let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(self.local_order_dags.clone(), fixed_tx_threshold, pending_tx_threshold); // 3.0, 2.5
                 let global_order_graph = global_order_graph_obj.get_dag_serialized();
                 let missed_edges = global_order_graph_obj.get_missed_edges();
                 let mut missed_pairs: HashSet<(Node, Node)> = HashSet::new();
