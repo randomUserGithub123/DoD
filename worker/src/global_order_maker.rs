@@ -1,6 +1,7 @@
 // Copyright(C) Heena Nagda.
 use crate::global_order_quorum_waiter::GlobalOrderQuorumWaiterMessage;
 use crate::worker::{Round, WorkerMessage};
+use crate::batch_buffer::BatchBufferRoundDoneMessage;
 // use crate::worker::SerializedBatchDigestMessage;
 use crate::missing_edge_manager::MissingEdgeManager;
 use config::{WorkerId, Committee};
@@ -73,6 +74,8 @@ pub struct GlobalOrderMaker{
     network: ReliableSender,
     // store a map from rashnu round to a struct that contains the local order dags and whether this was sent
     rashnu_round_to_local_order_dags: HashMap<u64, LocalOrderDags>,
+    /// Output channel to send an update to the batch buffer saying that we're done with this round
+    tx_batch_buffer: Sender<BatchBufferRoundDoneMessage>,
 }
 
 
@@ -86,6 +89,7 @@ impl GlobalOrderMaker {
         rx_round: Receiver<Round>,
         rx_batch: Receiver<GlobalOrderMakerMessage>,
         // tx_digest: Sender<SerializedBatchDigestMessage>,
+        tx_batch_buffer: Sender<BatchBufferRoundDoneMessage>,
         tx_message: Sender<GlobalOrderQuorumWaiterMessage>,
         workers_addresses: Vec<(PublicKey, SocketAddr)>,
     ) {
@@ -105,6 +109,7 @@ impl GlobalOrderMaker {
                 workers_addresses,
                 network: ReliableSender::new(),
                 rashnu_round_to_local_order_dags: HashMap::new(),
+                tx_batch_buffer,
             }
             .run()
             .await;
@@ -193,6 +198,8 @@ impl GlobalOrderMaker {
                 // create a Global Order based on n-f received local orders 
                 let local_order_dags = self.rashnu_round_to_local_order_dags.get_mut(&batch_rashnu_round).unwrap();
                 let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(local_order_dags.local_order_dags.clone(), 0.0, 0.0); // 3.0, 2.5
+                let dag_obj = global_order_graph_obj.get_dag();
+                let global_order_sent_nodes = dag_obj.nodes();
                 let global_order_graph = global_order_graph_obj.get_dag_serialized();
                 let missed_edges = global_order_graph_obj.get_missed_edges();
                 let mut missed_pairs: HashSet<(Node, Node)> = HashSet::new();
@@ -257,6 +264,18 @@ impl GlobalOrderMaker {
                 })
                 .await
                 .expect("Failed to deliver global order");
+
+                // send an update to the batch buffer saying that we're done with this round
+                let mut sent_nodes = Vec::new();
+                for node in global_order_sent_nodes{
+                    sent_nodes.push(node);
+                }
+
+                let batch_buffer_message = BatchBufferRoundDoneMessage {
+                    sent_nodes,
+                    rashnu_round: self.rashnu_round,
+                };
+                self.tx_batch_buffer.send(batch_buffer_message).await.expect("Failed to send batch buffer message");
             }
         }
     }
