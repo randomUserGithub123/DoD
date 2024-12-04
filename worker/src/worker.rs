@@ -6,6 +6,7 @@ use crate::processor::{Processor, SerializedBatchMessage};
 use crate::global_order_processor::{GlobalOrderProcessor, SerializedGlobalOrderMessage};
 use crate::quorum_waiter::QuorumWaiter;
 use crate::synchronizer::Synchronizer;
+use crate::batch_buffer::BatchBuffer;
 use crate::global_order_maker::{GlobalOrder, MissedEdgePairs, GlobalOrderMaker, GlobalOrderMakerMessage};
 use crate::global_order_quorum_waiter::GlobalOrderQuorumWaiter;
 use crate::missing_edge_manager::MissingEdgeManager;
@@ -219,6 +220,8 @@ impl Worker {
     /// Spawn all tasks responsible to handle clients transactions.
     fn handle_clients_transactions(&self, rx_batch_round: tokio::sync::mpsc::Receiver<Round>, tx_global_order_batch: Sender<GlobalOrderMakerMessage>) {
         let (tx_batch_maker, rx_batch_maker) = channel(CHANNEL_CAPACITY);
+        let (tx_batch_buffer, rx_batch_buffer) = channel(CHANNEL_CAPACITY);
+        let (tx_global_order_batch_buffer, rx_global_order_batch_buffer) = channel(CHANNEL_CAPACITY);
         let (tx_quorum_waiter, rx_quorum_waiter) = channel(CHANNEL_CAPACITY);
         let (tx_processor, rx_processor) = channel(CHANNEL_CAPACITY);
 
@@ -243,9 +246,21 @@ impl Worker {
             self.parameters.batch_size,
             self.parameters.max_batch_delay,
             /* rx_transaction */ rx_batch_maker,
-            /* tx_message */ tx_quorum_waiter,
+            /* tx_message */ tx_batch_buffer,
             /* rx_batch_round */ rx_batch_round,
             /* workers_addresses */
+            self.committee
+                .others_workers(&self.name, &self.id)
+                .iter()
+                .map(|(name, addresses)| (*name, addresses.worker_to_worker))
+                .collect(),
+            self.sb_handler.clone(),
+        );
+
+        BatchBuffer::spawn(
+            rx_batch_buffer,
+            rx_global_order_batch_buffer,
+            tx_quorum_waiter,
             self.committee
                 .others_workers(&self.name, &self.id)
                 .iter()

@@ -8,6 +8,7 @@ use crypto::Digest;
 use crypto::PublicKey;
 use ed25519_dalek::Digest as _;
 use ed25519_dalek::Sha512;
+use petgraph::algo::k_shortest_path;
 use std::convert::TryInto;
 use std::net::SocketAddr;
 use std::sync::{Arc};
@@ -20,6 +21,7 @@ use petgraph::prelude::DiGraphMap;
 use network::ReliableSender;
 use bytes::Bytes;
 use std::collections::HashSet;
+use std::collections::HashMap;
 
 /// Indicates a serialized `WorkerMessage::Batch` message.
 pub type SerializedBatchMessage = Vec<u8>;
@@ -36,6 +38,11 @@ pub struct GlobalOrderMakerMessage {
     pub own_digest: bool,
 }
 
+pub struct LocalOrderDags {
+    pub local_order_dags: Vec<DiGraphMap<Node, u8>>,
+    pub sent: bool,
+}
+
 /// Hashes and stores batches, it then outputs the batch's digest.
 pub struct GlobalOrderMaker{
     /// The committee information.
@@ -48,6 +55,8 @@ pub struct GlobalOrderMaker{
     missed_edge_manager: Arc<Mutex<MissingEdgeManager>>,
     /// Current round.
     current_round: Round,
+    /// Rashnu round
+    rashnu_round: u64,
     /// Local orders
     local_order_dags: Vec<DiGraphMap<Node, u8>>,
     /// Input channel to receive updated current round.
@@ -62,6 +71,8 @@ pub struct GlobalOrderMaker{
     workers_addresses: Vec<(PublicKey, SocketAddr)>,
     /// A network sender to broadcast the batches to the other workers.
     network: ReliableSender,
+    // store a map from rashnu round to a struct that contains the local order dags and whether this was sent
+    rashnu_round_to_local_order_dags: HashMap<u64, LocalOrderDags>,
 }
 
 
@@ -85,6 +96,7 @@ impl GlobalOrderMaker {
                 store,
                 missed_edge_manager,
                 current_round: 1,
+                rashnu_round: 1,  
                 local_order_dags: Vec::new(),
                 rx_round,
                 rx_batch,
@@ -92,6 +104,7 @@ impl GlobalOrderMaker {
                 tx_message,
                 workers_addresses,
                 network: ReliableSender::new(),
+                rashnu_round_to_local_order_dags: HashMap::new(),
             }
             .run()
             .await;
@@ -102,50 +115,89 @@ impl GlobalOrderMaker {
     async fn run(&mut self) {
         while let Some(GlobalOrderMakerMessage { batch, own_digest }) = self.rx_batch.recv().await {
             // Get the new round number if advanced (non blocking)
-            match self.rx_round.try_recv(){
-                Ok(round) => {
-                    info!("Update round received : {}", round);
-                    self.current_round = round;
-                    self.local_order_dags.clear();
-                },
-                _ => (),
-            }
+            // match self.rx_round.try_recv(){
+            //     Ok(round) => {
+            //         info!("Update round received : {}", round);
+            //         self.current_round = round;
+            //         self.local_order_dags.clear();
+            //     },
+            //     _ => (),
+            // }
 
-            info!("current_round = {:?}", self.current_round);
+            // info!("current_round = {:?}", self.current_round);
+            // info!("rashnu_round = {:?}", self.rashnu_round);
 
             let mut send_order: bool = false;
-            // creating a Global Order
-            if (self.local_order_dags.len() as u32) < self.committee.quorum_threshold(){
-                match bincode::deserialize(&batch).unwrap() {
-                    WorkerMessage::Batch(mut batch) => {
-                        match batch.pop() {
-                            Some(batch_round_vec) => {
-                                let batch_round_arr = batch_round_vec.try_into().unwrap_or_else(|batch_round_vec: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 8, batch_round_vec.len()));
-                                let batch_round = u64::from_le_bytes(batch_round_arr);
-                                // 
-                                if batch_round == self.current_round {
-                                    let dag = LocalOrderGraph::get_dag_deserialized(batch);
-                                    self.update_missed_edges(dag.clone()).await;
-                                    self.local_order_dags.push(dag);
-                                    if (self.local_order_dags.len() as u32) >= self.committee.quorum_threshold(){
-                                        send_order = true;
-                                    }
-                                }
+            let mut batch_rashnu_round: u64 = 0;
+            
+            // get the digest of the batch here
+            let debug_batch_digest = Digest(Sha512::digest(&batch).as_slice()[..32].try_into().unwrap());
+            // get the round ID
+            match bincode::deserialize(&batch).unwrap() {
+                WorkerMessage::Batch(mut batch) => {
+                    match batch.pop() {
+                        Some(batch_round_vec) => {
+                            let batch_round_arr = batch_round_vec.try_into().unwrap_or_else(|batch_round_vec: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 8, batch_round_vec.len()));
+                            batch_rashnu_round = u64::from_le_bytes(batch_round_arr);
+
+                            info!("global_order_maker::run : batch_rashnu_round = {:?} digest = {:?} own_digest = {:?}", batch_rashnu_round, debug_batch_digest, own_digest);
+                            
+                            if !self.rashnu_round_to_local_order_dags.contains_key(&batch_rashnu_round){
+                                self.rashnu_round_to_local_order_dags.insert(batch_rashnu_round, LocalOrderDags { local_order_dags: Vec::new(), sent: false });
                             }
-                            _ => panic!("Unexpected batch round found"),
+                            let local_order_dags = self.rashnu_round_to_local_order_dags.get_mut(&batch_rashnu_round).unwrap();
+                            if !local_order_dags.sent{
+                                // let dag = LocalOrderGraph::get_dag_deserialized(batch);
+                                // self.update_missed_edges(dag.clone()).await;
+                                local_order_dags.local_order_dags.push(LocalOrderGraph::get_dag_deserialized(batch));
+                            }
+                            if (local_order_dags.local_order_dags.len() as u32) >= self.committee.quorum_threshold() && !local_order_dags.sent {
+                                info!("global_order_maker::run : send_order = true, batch_digest = {:?}", debug_batch_digest);
+                                local_order_dags.sent = true;
+                                send_order = true;
+                            }
                         }
-                    },
-                    _ => panic!("Unexpected message"),
+                        _ => panic!("Unexpected batch round found"),
+                    }
                 }
+                _ => panic!("Unexpected message"),
             }
+
+            // creating a Global Order
+            // if (local_order_dags.local_order_dags.len() as u32) < self.committee.quorum_threshold(){
+            //     match bincode::deserialize(&batch).unwrap() {
+            //         WorkerMessage::Batch(mut batch) => {
+            //             match batch.pop() {
+            //                 Some(batch_round_vec) => {
+            //                     let batch_round_arr = batch_round_vec.try_into().unwrap_or_else(|batch_round_vec: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 8, batch_round_vec.len()));
+            //                     let batch_round = u64::from_le_bytes(batch_round_arr);
+            //                     // 
+            //                     if batch_round == self.rashnu_round {
+            //                         let dag = LocalOrderGraph::get_dag_deserialized(batch);
+            //                         self.update_missed_edges(dag.clone()).await;
+            //                         self.local_order_dags.push(dag);
+            //                         if (self.local_order_dags.len() as u32) >= self.committee.quorum_threshold(){
+            //                             send_order = true;
+            //                         }
+            //                     }
+            //                 }
+            //                 _ => panic!("Unexpected batch round found"),
+            //             }
+            //         },
+            //         _ => panic!("Unexpected message"),
+            //     }
+            // }
 
             if send_order{
                 // TODO: Pending and fixed transaction threshold
                 // create a Global Order based on n-f received local orders 
-                let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(self.local_order_dags.clone(), 0.0, 0.0); // 3.0, 2.5
+                let local_order_dags = self.rashnu_round_to_local_order_dags.get_mut(&batch_rashnu_round).unwrap();
+                let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(local_order_dags.local_order_dags.clone(), 0.0, 0.0); // 3.0, 2.5
                 let global_order_graph = global_order_graph_obj.get_dag_serialized();
                 let missed_edges = global_order_graph_obj.get_missed_edges();
                 let mut missed_pairs: HashSet<(Node, Node)> = HashSet::new();
+
+                info!("global_order_maker::run : digest = {:?}, num of nodes = {:?}", debug_batch_digest, global_order_graph_obj.get_dag().node_count());
                 
                 for ((from, to), count) in &missed_edges{
                     {
@@ -158,7 +210,9 @@ impl GlobalOrderMaker {
                         missed_pairs.insert((*from, *to));
                     }
                 }
-                
+
+                info!("global_order_maker::run : global_order_graph size = {:?}", global_order_graph.len());
+                let global_order_len = global_order_graph.len();
                 let message = WorkerMessage::GlobalOrderInfo(global_order_graph, missed_pairs.clone());
                 let serialized = bincode::serialize(&message).expect("Failed to serialize global order graph");
 
@@ -185,7 +239,8 @@ impl GlobalOrderMaker {
                     }
 
                     // NOTE: This log entry is used to compute performance.
-                    info!("Batch {:?} contains {} B", digest, 512*4);
+                    info!("Batch {:?} contains {} B", digest, global_order_len*512);
+                    info!("Batch: {:?} maps to {:?}", digest, debug_batch_digest);
                 }
 
                 // Broadcast the batch through the network.

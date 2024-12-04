@@ -2,6 +2,7 @@
 use crate::quorum_waiter::QuorumWaiterMessage;
 use crate::worker::{WorkerMessage, Round};
 use crate::writer_store::WriterStore;
+use crate::batch_buffer::BatchBufferMessage;
 use bytes::Bytes;
 #[cfg(feature = "benchmark")]
 use crypto::Digest;
@@ -48,7 +49,7 @@ pub struct BatchMaker {
     /// Channel to receive transactions from the network.
     rx_transaction: Receiver<(Transaction, Arc<Mutex<Writer>>)>,
     /// Output channel to deliver sealed batches to the `QuorumWaiter`.
-    tx_message: Sender<QuorumWaiterMessage>,
+    tx_message: Sender<BatchBufferMessage>,
     /// Input channel to receive new round number when advanced
     rx_batch_round: Receiver<Round>,
     /// Current round
@@ -63,6 +64,8 @@ pub struct BatchMaker {
     current_batch_size: usize,
     /// A network sender to broadcast the batches to the other workers.
     network: ReliableSender,
+    /// The current Rashnu round number
+    rashnu_round: u64,
 }
 
 impl BatchMaker {
@@ -72,7 +75,7 @@ impl BatchMaker {
         batch_size: usize,
         max_batch_delay: u64,
         rx_transaction: Receiver<(Transaction, Arc<Mutex<Writer>>)>,
-        tx_message: Sender<QuorumWaiterMessage>,
+        tx_message: Sender<BatchBufferMessage>,
         rx_batch_round: Receiver<Round>,
         workers_addresses: Vec<(PublicKey, SocketAddr)>,
         sb_handler: SmallBankTransactionHandler,
@@ -92,6 +95,7 @@ impl BatchMaker {
                 current_batch: Batch::with_capacity(batch_size * 2),
                 current_batch_size: 0,
                 network: ReliableSender::new(),
+                rashnu_round: 1,
             }
             .run()
             .await;
@@ -105,13 +109,13 @@ impl BatchMaker {
 
         loop {
             // Get the new round number if advanced (non blocking)
-            match self.rx_batch_round.try_recv(){
-                Ok(round) => {
-                    info!("Update round received : {}", round);
-                    self.current_round = round;
-                },
-                _ => (),
-            }
+            // match self.rx_batch_round.try_recv(){
+            //     Ok(round) => {
+            //         info!("Update round received : {}", round);
+            //         self.current_round = round;
+            //     },
+            //     _ => (),
+            // }
             
             tokio::select! {
                 // Assemble client transactions into batches of preset size.
@@ -153,12 +157,12 @@ impl BatchMaker {
 
         // Look for sample txs (they all start with 0) and gather their txs id (the next 8 bytes).
         #[cfg(feature = "benchmark")]
-        let tx_ids: Vec<_> = self
+        let tx_ids: Vec<[u8; 8]> = self
             .current_batch
             .iter()
             .filter(|tx| tx[0] == 0u8 && tx.len() > 8)
             .filter_map(|tx| tx[1..9].try_into().ok())
-            .collect();
+            .collect::<Vec<_>>();
 
         // TODO: Graphs
         // info!("size of current batch = {:?}", self.current_batch.len());
@@ -187,6 +191,13 @@ impl BatchMaker {
             // Add transaction to create a local order
             local_order.push((tx_uid, tx.clone()));
         }
+        info!("batch_maker::seal : local_order size number of nodes = {:?}", local_order.len());
+        let batch_buffer_message = BatchBufferMessage {
+            batch: local_order,
+            rashnu_round: self.rashnu_round,
+        };
+        self.rashnu_round += 1;
+        self.tx_message.send(batch_buffer_message).await.expect("Failed to send batch buffer message");
 
         // let drained_batch: Vec<_> = self.current_batch.drain(..).collect();
         // let mut idx: Node = 0;
@@ -195,52 +206,61 @@ impl BatchMaker {
         //     // local_order.push((self.sb_handler.get_transaction_uid(Bytes::from(<Vec<u8> as TryInto<Vec<u8>>>::try_into(tx.clone()).unwrap())), tx.clone()));
         //     idx += 1;
         // };
-
-        let local_order_graph_obj: LocalOrderGraph = LocalOrderGraph::new(local_order, self.sb_handler.clone());
-        let mut batch = local_order_graph_obj.get_dag_serialized();
-        // Adding current round number with this batch
-        batch.push(self.current_round.to_le_bytes().to_vec());
+        // let local_order_len = local_order.len();
+        // let local_order_graph_obj: LocalOrderGraph = LocalOrderGraph::new(local_order, self.sb_handler.clone());
+        // let mut batch = local_order_graph_obj.get_dag_serialized();
+        // // Adding current Rashnu round number with this batch
+        // batch.push(self.rashnu_round.to_le_bytes().to_vec());
+        // self.rashnu_round += 1;
         
-        // Serialize the batch.
-        // self.current_batch_size = 0;
-        // let batch: Vec<_> = self.current_batch.drain(..).collect();
-        let message = WorkerMessage::Batch(batch);
-        let serialized = bincode::serialize(&message).expect("Failed to serialize our own batch");
+        // // Serialize the batch.
+        // // self.current_batch_size = 0;
+        // // let batch: Vec<_> = self.current_batch.drain(..).collect();
+        // let message = WorkerMessage::Batch(batch);
+        // let serialized = bincode::serialize(&message).expect("Failed to serialize our own batch");
+        
+        // // compute digest
+        // let digest = Digest(
+        //     Sha512::digest(&serialized).as_slice()[..32]
+        //         .try_into()
+        //         .unwrap(),
+        // );
+        // info!("batch_maker::seal : local_order_len = {:?}, digest = {:?}", local_order_len, digest);
 
-        #[cfg(feature = "benchmark")]
-        {
-            // NOTE: This is one extra hash that is only needed to print the following log entries.
-            let digest = Digest(
-                Sha512::digest(&serialized).as_slice()[..32]
-                    .try_into()
-                    .unwrap(),
-            );
+        // #[cfg(feature = "benchmark")]
+        // {
+        //     // NOTE: This is one extra hash that is only needed to print the following log entries.
+        //     let digest = Digest(
+        //         Sha512::digest(&serialized).as_slice()[..32]
+        //             .try_into()
+        //             .unwrap(),
+        //     );
 
-            for id in tx_ids {
-                // NOTE: This log entry is used to compute performance.
-                info!(
-                    "Batch {:?} ----- {}",
-                    digest,
-                    u64::from_be_bytes(id)
-                );
-            }
+        //     for id in tx_ids {
+        //         // NOTE: This log entry is used to compute performance.
+        //         info!(
+        //             "Batch {:?} ----- {}",
+        //             digest,
+        //             u64::from_be_bytes(id)
+        //         );
+        //     }
 
-            // NOTE: This log entry is used to compute performance.
-            info!("Batch {:?} ------ {} B", digest, size);
-        }
+        //     // NOTE: This log entry is used to compute performance.
+        //     info!("Batch {:?} ------ {} B", digest, size);
+        // }
 
-        // Broadcast the batch through the network.
-        let (names, addresses): (Vec<_>, _) = self.workers_addresses.iter().cloned().unzip();
-        let bytes = Bytes::from(serialized.clone());
-        let handlers = self.network.broadcast(addresses, bytes).await;
+        // // Broadcast the batch through the network.
+        // let (names, addresses): (Vec<_>, _) = self.workers_addresses.iter().cloned().unzip();
+        // let bytes = Bytes::from(serialized.clone());
+        // let handlers = self.network.broadcast(addresses, bytes).await;
 
-        // Send the batch through the deliver channel for further processing.
-        self.tx_message
-            .send(QuorumWaiterMessage {
-                batch: serialized,
-                handlers: names.into_iter().zip(handlers.into_iter()).collect(),
-            })
-            .await
-            .expect("Failed to deliver batch");
+        // // Send the batch through the deliver channel for further processing.
+        // self.tx_message
+        //     .send(QuorumWaiterMessage {
+        //         batch: serialized,
+        //         handlers: names.into_iter().zip(handlers.into_iter()).collect(),
+        //     })
+        //     .await
+        //     .expect("Failed to deliver batch");
     }
 }
