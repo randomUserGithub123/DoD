@@ -79,6 +79,8 @@ pub struct Parameters {
     /// The delay after which the workers seal a batch of transactions, even if `max_batch_size`
     /// is not reached. Denominated in ms.
     pub max_batch_delay: u64,
+    /// Fairness factor for the fraction of nodes that have to agree with the order
+    pub gamma: f64,
 }
 
 impl Default for Parameters {
@@ -91,6 +93,7 @@ impl Default for Parameters {
             sync_retry_nodes: 3,
             batch_size: 500_000,
             max_batch_delay: 100,
+            gamma: 0.3,
         }
     }
 }
@@ -106,6 +109,7 @@ impl Parameters {
         info!("Sync retry nodes set to {} nodes", self.sync_retry_nodes);
         info!("Batch size set to {} B", self.batch_size);
         info!("Max batch delay set to {} ms", self.max_batch_delay);
+        info!("Gamma set to {}", self.gamma);
     }
 }
 
@@ -170,6 +174,17 @@ impl Committee {
         // then (2 N + 3) / 3 = 2f + 1 + (2k + 2)/3 = 2f + 1 + k = N - f
         let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
         2 * total_votes / 3 + 1
+    }
+
+    /// Returns the stake required for a transaction to be labelled as fixed (N - 2f)
+    pub fn fixed_tx_threshold(&self) -> Stake {
+        self.validity_threshold()
+    }
+
+    /// Returns the stake threshold for a transaction to be labelled as pending
+    pub fn pending_tx_threshold(&self, gamma: f64) -> Stake {
+        let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
+        (total_votes as f64 * (1 as f64 - gamma)) as u32 + self.validity_threshold()
     }
 
     /// Returns the stake required to reach availability (f+1).
