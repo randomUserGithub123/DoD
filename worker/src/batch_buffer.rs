@@ -58,6 +58,8 @@ pub struct BatchBuffer {
     sb_handler: SmallBankTransactionHandler,
     // Hashmap to store unsent nodes
     node_info_map: HashMap<Node, NodeInfo>,
+    // flag to check whether we are in a round or not
+    in_round: bool,
 }
 
 impl BatchBuffer {
@@ -78,6 +80,7 @@ impl BatchBuffer {
                 network: ReliableSender::new(),
                 sb_handler,
                 node_info_map: HashMap::new(),
+                in_round: false,
             }.run().await;
         });
     }
@@ -87,10 +90,24 @@ impl BatchBuffer {
         loop {
             tokio::select! {
                 Some(batch) = self.rx_message.recv() => {
-                    self.batch_store.push_back(batch);
+                    info!("batch_buffer::run: received batch");
+                    // self.batch_store.push_back(batch);
+                    // self.seal_round_no_active_round(batch).await;
+                    if !self.in_round {
+                        self.in_round = true;
+                        // send this to the next stage (quorum waiter)
+                        self.seal_round_no_active_round(batch).await;
+                    } else {
+                        self.batch_store.push_back(batch);
+                    }
                 }
                 Some(round_done_message) = self.rx_round_done.recv() => {
-                    self.seal_round(round_done_message).await;
+                    if (self.batch_store.len() == 0) {
+                        self.in_round = false;
+                    } else {
+                        self.seal_round(round_done_message).await;
+                    }
+
                     // handle the case where the current Rashnu round is done
                     // let current_batch_msg = self.batch_store.pop_front().unwrap();
                     // let current_batch = current_batch_msg.batch;
@@ -146,6 +163,42 @@ impl BatchBuffer {
         }
     }
 
+    async fn seal_round_no_active_round(&mut self, current_batch_msg: BatchBufferMessage) {
+        // send this to the next stage (quorum waiter)
+        let local_order_len = current_batch_msg.batch.len();
+        let local_order_graph_obj: LocalOrderGraph = LocalOrderGraph::new(current_batch_msg.batch, self.sb_handler.clone());
+        let mut batch = local_order_graph_obj.get_dag_serialized();
+        batch.push(current_batch_msg.rashnu_round.to_le_bytes().to_vec());
+        let message = WorkerMessage::Batch(batch);
+        let serialized = bincode::serialize(&message).expect("Failed to serialize the batch");
+
+        let digest = Digest(Sha512::digest(&serialized).as_slice()[..32].try_into().unwrap()); // compute digest
+        info!("batch_buffer::run: local_order_len = {:?}, digest = {:?}", local_order_len, digest);
+
+        #[cfg(feature = "benchmark")]
+        {
+            // NOTE: This is one extra hash that is only needed to print the following log entries.
+            let digest = Digest(
+                Sha512::digest(&serialized).as_slice()[..32]
+                    .try_into()
+                    .unwrap(),
+            );
+            // NOTE: This log entry is used to compute performance.
+            info!("Batch {:?} ------ {} B", digest, local_order_len);
+        }
+
+        let (names, addresses): (Vec<_>, _) = self.workers_addresses.iter().cloned().unzip();
+        let bytes = Bytes::from(serialized.clone());
+        let handlers = self.network.broadcast(addresses, bytes).await;
+
+        self.tx_message
+            .send(QuorumWaiterMessage { 
+                batch: serialized, 
+                handlers: names.into_iter().zip(handlers.into_iter()).collect() 
+            })
+            .await.expect("Failed to send the batch to the next stage");
+    }
+
     async fn seal_round(&mut self, round_done_message: BatchBufferRoundDoneMessage) {
         info!("batch_buffer::seal_round: sealing round = {:?}", round_done_message.rashnu_round);
         let mut final_batch = Vec::new();
@@ -154,7 +207,7 @@ impl BatchBuffer {
         let current_rashnu_round = current_batch_msg.rashnu_round;
         // check that the Rashnu round number is reasonable
         // Step 1 : add all unsent txs from previous rounds that have not appeared in leader proposal
-        for node in round_done_message.sent_nodes.clone() {
+        for node in &round_done_message.sent_nodes {
             if let Some(node_info) = self.node_info_map.get_mut(&node) {
                 if !node_info.included_in_global_order {
                     node_info.included_in_global_order = true;
@@ -171,7 +224,8 @@ impl BatchBuffer {
         }
         // Step 2 : add all txs received in the current round
         for (node, tx) in current_batch {
-            final_batch.push((node, tx));
+            final_batch.push((node, tx.clone()));
+            self.node_info_map.insert(node, NodeInfo { node, tx, sent: true, included_in_global_order: false });
         }
         // Step 3 : construct the local order DAG (do we need to add missing edges here?)
         let local_order_len = final_batch.len();
@@ -214,4 +268,3 @@ impl BatchBuffer {
 
     }
 }
-
