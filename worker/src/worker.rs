@@ -6,6 +6,7 @@ use crate::processor::{Processor, SerializedBatchMessage};
 use crate::global_order_processor::{GlobalOrderProcessor, SerializedGlobalOrderMessage};
 use crate::quorum_waiter::QuorumWaiter;
 use crate::synchronizer::Synchronizer;
+use crate::batch_buffer::{BatchBuffer, BatchBufferRoundDoneMessage};
 use crate::global_order_maker::{GlobalOrder, MissedEdgePairs, GlobalOrderMaker, GlobalOrderMakerMessage};
 use crate::global_order_quorum_waiter::GlobalOrderQuorumWaiter;
 use crate::missing_edge_manager::MissingEdgeManager;
@@ -106,10 +107,11 @@ impl Worker {
         let (tx_batch_round, rx_batch_round) = channel(CHANNEL_CAPACITY);
         let (tx_global_order_round, rx_global_order_round) = channel(CHANNEL_CAPACITY);
         let (tx_global_order_batch, rx_global_order_batch) = channel(CHANNEL_CAPACITY);
+        let (tx_batch_buffer_round_done, rx_batch_buffer_round_done) = channel(CHANNEL_CAPACITY);
         let (tx_global_order_quorum_waiter, rx_global_order_quorum_waiter) = channel(CHANNEL_CAPACITY);
         let (tx_global_order_processor, rx_global_order_processor) = channel(CHANNEL_CAPACITY);
         worker.handle_primary_messages(tx_batch_round, tx_global_order_round);
-        worker.handle_clients_transactions(rx_batch_round, tx_global_order_batch.clone());
+        worker.handle_clients_transactions(rx_batch_round, tx_global_order_batch.clone(), rx_batch_buffer_round_done);
         worker.handle_workers_messages(tx_global_order_batch, tx_primary.clone());
 
         // The `GlobalOrderMaker` create Global order DAG based on n-f local order DAGs. 
@@ -123,6 +125,7 @@ impl Worker {
             /* rx_round */ rx_global_order_round,
             /* rx_batch */ rx_global_order_batch,
             // /* tx_digest */ tx_primary,
+            tx_batch_buffer_round_done, 
             /* tx_message */ tx_global_order_quorum_waiter,
             /* workers_addresses */
             committee
@@ -218,8 +221,13 @@ impl Worker {
     }
 
     /// Spawn all tasks responsible to handle clients transactions.
-    fn handle_clients_transactions(&self, rx_batch_round: tokio::sync::mpsc::Receiver<Round>, tx_global_order_batch: Sender<GlobalOrderMakerMessage>) {
+    fn handle_clients_transactions(&self, 
+        rx_batch_round: tokio::sync::mpsc::Receiver<Round>, 
+        tx_global_order_batch: Sender<GlobalOrderMakerMessage>,
+        rx_batch_buffer_round_done: tokio::sync::mpsc::Receiver<BatchBufferRoundDoneMessage>
+    ) {
         let (tx_batch_maker, rx_batch_maker) = channel(CHANNEL_CAPACITY);
+        let (tx_batch_buffer, rx_batch_buffer) = channel(CHANNEL_CAPACITY);
         let (tx_quorum_waiter, rx_quorum_waiter) = channel(CHANNEL_CAPACITY);
         let (tx_processor, rx_processor) = channel(CHANNEL_CAPACITY);
 
@@ -244,9 +252,21 @@ impl Worker {
             self.parameters.batch_size,
             self.parameters.max_batch_delay,
             /* rx_transaction */ rx_batch_maker,
-            /* tx_message */ tx_quorum_waiter,
+            /* tx_message */ tx_batch_buffer,
             /* rx_batch_round */ rx_batch_round,
             /* workers_addresses */
+            self.committee
+                .others_workers(&self.name, &self.id)
+                .iter()
+                .map(|(name, addresses)| (*name, addresses.worker_to_worker))
+                .collect(),
+            self.sb_handler.clone(),
+        );
+
+        BatchBuffer::spawn(
+            rx_batch_buffer,
+            rx_batch_buffer_round_done,
+            tx_quorum_waiter,
             self.committee
                 .others_workers(&self.name, &self.id)
                 .iter()
@@ -281,7 +301,10 @@ impl Worker {
     }
 
     /// Spawn all tasks responsible to handle messages from other workers.
-    fn handle_workers_messages(&self, tx_global_order_batch: Sender<GlobalOrderMakerMessage>, tx_primary: Sender<SerializedBatchDigestMessage>) {
+    fn handle_workers_messages(&self, 
+        tx_global_order_batch: Sender<GlobalOrderMakerMessage>, 
+        tx_primary: Sender<SerializedBatchDigestMessage>
+    ) {
         let (tx_helper, rx_helper) = channel(CHANNEL_CAPACITY);
         let (tx_processor, rx_processor) = channel(CHANNEL_CAPACITY);
         let (tx_global_order_processor, rx_global_order_processor) = channel(CHANNEL_CAPACITY);

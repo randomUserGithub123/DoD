@@ -12,6 +12,7 @@ mod missing_edge_manager;
 mod execution_queue;
 mod writer_store;
 mod worker;
+mod batch_buffer;
 
 #[cfg(test)]
 #[path = "tests/common.rs"]
