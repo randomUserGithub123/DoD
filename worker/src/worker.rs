@@ -25,7 +25,7 @@ use std::error::Error;
 use store::Store;
 use tokio::sync::mpsc::{channel, Sender};
 use smallbank::SmallBankTransactionHandler;
-use std::sync::{Arc};
+use std::sync::Arc;
 use futures::lock::Mutex;
 use futures::stream::SplitSink;
 use std::clone::Clone;
@@ -133,6 +133,7 @@ impl Worker {
                 .iter()
                 .map(|(name, addresses)| (*name, addresses.worker_to_worker))
                 .collect(),
+            parameters.gamma,
         );
 
         // The `QuorumWaiter` waits for 2f authorities to acknowledge reception of the batch. It then forwards

@@ -76,6 +76,8 @@ pub struct GlobalOrderMaker{
     rashnu_round_to_local_order_dags: HashMap<u64, LocalOrderDags>,
     /// Output channel to send an update to the batch buffer saying that we're done with this round
     tx_batch_buffer: Sender<BatchBufferRoundDoneMessage>,
+    // Fairness factor
+    gamma: f64,
 }
 
 
@@ -92,6 +94,7 @@ impl GlobalOrderMaker {
         tx_batch_buffer: Sender<BatchBufferRoundDoneMessage>,
         tx_message: Sender<GlobalOrderQuorumWaiterMessage>,
         workers_addresses: Vec<(PublicKey, SocketAddr)>,
+        gamma: f64,
     ) {
         tokio::spawn(async move {
             Self {
@@ -110,6 +113,7 @@ impl GlobalOrderMaker {
                 network: ReliableSender::new(),
                 rashnu_round_to_local_order_dags: HashMap::new(),
                 tx_batch_buffer,
+                gamma,
             }
             .run()
             .await;
@@ -200,6 +204,9 @@ impl GlobalOrderMaker {
                 let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(local_order_dags.local_order_dags.clone(), 0.0, 0.0); // 3.0, 2.5
                 let dag_obj = global_order_graph_obj.get_dag();
                 let global_order_sent_nodes = dag_obj.nodes();
+                let fixed_tx_threshold = self.committee.fixed_tx_threshold();
+                let pending_tx_threshold = self.committee.pending_tx_threshold(self.gamma);
+                let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(self.local_order_dags.clone(), fixed_tx_threshold, pending_tx_threshold); // 3.0, 2.5
                 let global_order_graph = global_order_graph_obj.get_dag_serialized();
                 let missed_edges = global_order_graph_obj.get_missed_edges();
                 let mut missed_pairs: HashSet<(Node, Node)> = HashSet::new();
