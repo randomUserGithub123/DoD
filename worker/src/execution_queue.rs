@@ -171,24 +171,24 @@ impl ParallelExecution {
         info!("ParallelExecution:execute :: #nodes in graph = {:?}", self.global_order_graph.node_count());
 
         // Create a HashMap to store in-degrees of nodes
-        let in_degrees: Arc<futures::lock::Mutex<HashMap<Node, usize>>> = Arc::new(Mutex::new(HashMap::new()));
-        in_degrees_unlocked = in_degrees.lock().await;
-        for node in self.global_order_graph.nodes() {
-            in_degrees_unlocked.insert(node, self.global_order_graph.edges_directed(node, Incoming).count());
-        }
+        // let in_degrees: Arc<futures::lock::Mutex<HashMap<Node, usize>>> = Arc::new(Mutex::new(HashMap::new()));
+        // in_degrees_unlocked = in_degrees.lock().await;
+        // for node in self.global_order_graph.nodes() {
+        //     in_degrees_unlocked.insert(node, self.global_order_graph.edges_directed(node, Incoming).count());
+        // }
 
-        // Create a queue for nodes with in-degree 0
-        let mut queue = VecDeque::new();
+        // // Create a queue for nodes with in-degree 0
+        // let mut queue = VecDeque::new();
 
-        // Initialize the queue with nodes that have in-degree 0
-        for (&node, &degree) in in_degrees.iter() {
-            if degree == 0 {
-                queue.push_back(node);
-            }
-        }
+        // // Initialize the queue with nodes that have in-degree 0
+        // for (&node, &degree) in in_degrees.iter() {
+        //     if degree == 0 {
+        //         queue.push_back(node);
+        //     }
+        // }
 
         // Comment out the old implementation
-        /*
+        
         // TEST: START
         for tx_uid in self.global_order_graph.nodes(){
             info!("ParallelExecution::execute : tx_uid = {:?} is going to execute in", tx_uid);
@@ -208,7 +208,7 @@ impl ParallelExecution {
                 }
             }
         }
-        info!("ParallelExecution::execute : Test ends");
+        // info!("ParallelExecution::execute : Test ends");
         // TEST: END
 
 
@@ -249,7 +249,7 @@ impl ParallelExecution {
         // for task in blocking_tasks{
         //     let _ = task.await;
         // }
-        */
+        
     }
 }
 

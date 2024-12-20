@@ -94,7 +94,7 @@ impl Worker {
             id,
             shard,
             committee: committee.clone(),
-            parameters,
+            parameters: parameters.clone(),
             store: store.clone(),
             sb_handler: sb_handler.clone(),
             missed_edge_manager: missed_edge_manager.clone(),
