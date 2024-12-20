@@ -50,6 +50,8 @@ pub enum WorkerMessage {
     Batch(Batch),
     BatchRequest(Vec<Digest>, /* origin */ PublicKey),
     GlobalOrderInfo(GlobalOrder, MissedEdgePairs),
+    TxRequest(Vec<u8>),
+    TxResponse(Vec<u8>),
 }
 
 pub struct Worker {
@@ -154,6 +156,11 @@ impl Worker {
             /* rx_global_order */ rx_global_order_processor,
             /* tx_digest */ tx_primary,
             /* own_batch */ true,
+            /* workers_addresses */ committee
+                .others_workers(&name, &id)
+                .iter()
+                .map(|(name, addresses)| (*name, addresses.worker_to_worker))
+                .collect(),
         );
 
         // The `PrimaryConnector` allows the worker to send messages to its primary.
@@ -353,6 +360,12 @@ impl Worker {
             /* rx_global_order */ rx_global_order_processor,
             /* tx_digest */ tx_primary,
             /* own_batch */ false,
+            /* workers_addresses */
+            self.committee
+                .others_workers(&self.name, &self.id)
+                .iter()
+                .map(|(name, addresses)| (*name, addresses.worker_to_worker))
+                .collect(),
         );
 
         info!(
@@ -418,6 +431,16 @@ impl MessageHandler for WorkerReceiverHandler {
                 .send(serialized.to_vec())
                 .await
                 .expect("Failed to send other workers' global order to the global order processor"),
+            Ok(WorkerMessage::TxRequest(..)) => {
+                // TODO: what do we do with the tx request
+                // Send to the worker that requested it
+                // Need a response handler as well
+            }
+            Ok(WorkerMessage::TxResponse(..)) => {
+                // TODO: what do we do with the tx response
+                // Send to the worker that requested it
+                // Need a response handler as well
+            }
 
             Err(e) => warn!("Serialization error: {}", e),
         }
