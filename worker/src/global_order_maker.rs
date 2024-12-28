@@ -282,7 +282,7 @@ impl GlobalOrderMaker {
 
                 let batch_buffer_message = BatchBufferRoundDoneMessage {
                     sent_nodes,
-                    rashnu_round: self.rashnu_round,
+                    rashnu_round: batch_rashnu_round,
                 };
                 self.tx_batch_buffer.send(batch_buffer_message).await.expect("Failed to send batch buffer message");
             }
