@@ -5,7 +5,7 @@ use crate::writer_store::WriterStore;
 use petgraph::graphmap::DiGraphMap;
 use std::sync::{Arc, Mutex};
 use futures::SinkExt;
-use tokio::task::JoinHandle;
+use tokio::{sync::mpsc, task::JoinHandle};
 use std::collections::{LinkedList, HashSet, HashMap, VecDeque};
 use bytes::Bytes;
 use network::Writer;
@@ -14,6 +14,7 @@ use store::Store;
 use smallbank::SmallBankTransactionHandler;
 use graph::GlobalOrderGraph;
 use log::{error, info};
+use petgraph::Direction::Incoming;
 
 type Node = u64;
 
@@ -165,29 +166,67 @@ impl ParallelExecution {
         }
     }
 
+    pub fn schedule_node(tx_uid: u64, writer_store: Arc<futures::lock::Mutex<WriterStore>>, tx_done: mpsc::UnboundedSender<u64>) {
+                
+        tokio::spawn(async move {
+
+            info!("ParallelExecution::schedule_node : tx_uid = {:?} is going to execute in", tx_uid);
+            let tx_id_vec = tx_uid.to_be_bytes().to_vec();
+            {
+                let mut writer_store_lock = writer_store.lock().await;
+                if writer_store_lock.writer_exists(tx_uid){
+                    info!("ParallelExecution::schedule_node : tx_uid = {:?} does exist in writer store", tx_uid);
+                    let mut writer: Arc<futures::lock::Mutex<Writer>> = writer_store_lock.get_writer(tx_uid);
+                    let mut writer_lock = writer.lock().await;
+                    let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
+                    writer_store_lock.delete_writer(tx_uid);
+                }
+                else{
+                    info!("ParallelExecution::schedule_node : tx_uid = {:?} does not exist in writer store", tx_uid);
+                }
+            }
+            // TODO: execute the node
+            // Notify that `node_id` is done so we can decrement children’s indeg.
+            let _ = tx_done.send(tx_uid);
+        });
+    }
+
     pub async fn execute(&mut self){
         // find incoming edge count for each node in the graph
         info!("ParallelExecution:execute");
         info!("ParallelExecution:execute :: #nodes in graph = {:?}", self.global_order_graph.node_count());
 
-        // Create a HashMap to store in-degrees of nodes
-        // let in_degrees: Arc<futures::lock::Mutex<HashMap<Node, usize>>> = Arc::new(Mutex::new(HashMap::new()));
-        // in_degrees_unlocked = in_degrees.lock().await;
-        // for node in self.global_order_graph.nodes() {
-        //     in_degrees_unlocked.insert(node, self.global_order_graph.edges_directed(node, Incoming).count());
-        // }
+        let mut in_degree_map: HashMap<Node, usize> = HashMap::new();
+        for node in self.global_order_graph.nodes(){
+            in_degree_map.insert(node, self.global_order_graph.edges_directed(node, Incoming).count());
+        }
 
-        // // Create a queue for nodes with in-degree 0
-        // let mut queue = VecDeque::new();
+        let (tx_done, mut rx_done) = mpsc::unbounded_channel::<u64>();
+        {
+            // find nodes with in-degree 0
+            for (node, in_degree) in &in_degree_map{
+                if *in_degree == 0{
+                    // spaw a task to execute the node
+                    ParallelExecution::schedule_node(*node, self.writer_store.clone(), tx_done.clone());
+                }
+            }
+        }
 
-        // // Initialize the queue with nodes that have in-degree 0
-        // for (&node, &degree) in in_degrees.iter() {
-        //     if degree == 0 {
-        //         queue.push_back(node);
-        //     }
-        // }
+        // drop(tx_done);
+        while let Some(completed_id) = rx_done.recv().await {
+            info!("ParallelExecution::execute : tx_uid = {:?} is completed", completed_id);
+            // TODO: evaluate sending the message here
+            // decrement in-degree for the neighbors of the completed node
+            for neighbor in self.global_order_graph.neighbors(completed_id){
+                in_degree_map.entry(neighbor).and_modify(|degree| *degree -= 1);
+                if *in_degree_map.get(&neighbor).unwrap() == 0{
+                    // spawn a task to execute the node
+                    ParallelExecution::schedule_node(neighbor, self.writer_store.clone(), tx_done.clone());
+                }
+            }
+        }
 
-        // Comment out the old implementation
+        println!("All transactions have completed.");
         
         // TEST: START
         for tx_uid in self.global_order_graph.nodes(){
