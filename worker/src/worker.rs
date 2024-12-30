@@ -43,6 +43,7 @@ pub type Round = u64;
 
 /// Indicates a serialized `WorkerPrimaryMessage` message.
 pub type SerializedBatchDigestMessage = Vec<u8>;
+pub type SerializedTxResponseMessage = Vec<u8>;
 
 /// The message exchanged between workers.
 #[derive(Debug, Serialize, Deserialize)]
@@ -314,6 +315,7 @@ impl Worker {
         tx_primary: Sender<SerializedBatchDigestMessage>
     ) {
         let (tx_helper, rx_helper) = channel(CHANNEL_CAPACITY);
+        let (tx_storage_helper, rx_storage_helper) = channel(CHANNEL_CAPACITY);
         let (tx_processor, rx_processor) = channel(CHANNEL_CAPACITY);
         let (tx_global_order_processor, rx_global_order_processor) = channel(CHANNEL_CAPACITY);
         let (tx_transaction_helper, rx_transaction_helper) = channel(CHANNEL_CAPACITY);
@@ -333,6 +335,7 @@ impl Worker {
                 tx_processor,
                 tx_global_order_processor,
                 tx_transaction_helper,
+                tx_storage_helper,
             },
         );
 
@@ -379,6 +382,12 @@ impl Worker {
             /* rx_request */ rx_transaction_helper,
         );
 
+        StorageHelper::spawn(
+            self.id,
+            self.store.clone(),
+            /* rx_batch */ rx_storage_helper,
+        );
+
         info!(
             "Worker {} listening to worker messages on {}",
             self.id, address
@@ -414,6 +423,7 @@ struct WorkerReceiverHandler {
     tx_processor: Sender<SerializedBatchMessage>,
     tx_global_order_processor: Sender<SerializedGlobalOrderMessage>,
     tx_transaction_helper: Sender<Vec<u8>>,
+    tx_storage_helper: Sender<SerializedTxResponseMessage>,
 }
 
 #[async_trait]
@@ -451,6 +461,10 @@ impl MessageHandler for WorkerReceiverHandler {
             }
             Ok(WorkerMessage::TxResponse(tx_id_vec, tx)) => {
                 // send this to a storage helper
+                self.tx_storage_helper
+                .send(serialized.to_vec())
+                .await
+                .expect("Failed to send tx response");
             }
 
             Err(e) => warn!("Serialization error: {}", e),

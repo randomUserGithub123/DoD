@@ -14,6 +14,7 @@ mod writer_store;
 mod worker;
 mod batch_buffer;
 mod tx_helper;
+mod storage_helper;
 #[cfg(test)]
 #[path = "tests/common.rs"]
 mod common;
