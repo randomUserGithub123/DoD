@@ -13,7 +13,7 @@ mod execution_queue;
 mod writer_store;
 mod worker;
 mod batch_buffer;
-
+mod tx_helper;
 #[cfg(test)]
 #[path = "tests/common.rs"]
 mod common;

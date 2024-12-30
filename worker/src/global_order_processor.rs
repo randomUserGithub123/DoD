@@ -30,6 +30,8 @@ pub struct GlobalOrderProcessor;
 
 impl GlobalOrderProcessor {
     pub fn spawn(
+        // Our worker's name
+        name: PublicKey,
         // Our worker's id.
         id: WorkerId,
         // The persistent storage.
@@ -47,6 +49,7 @@ impl GlobalOrderProcessor {
     ) {
         tokio::spawn(async move {
             // TODO: It is GlobalOrderInfo(GlobalOrder, MissedEdgePairs) NOT just GlobalOrder
+            let mut network = ReliableSender::new();
             while let Some(global_order) = rx_global_order.recv().await {
                 info!("Received Global order to process further. own_digest = {:?}", own_digest);
 
@@ -60,12 +63,11 @@ impl GlobalOrderProcessor {
                                     Ok(None) => {
                                         // let mut network = ReliableSender::new();
                                         // TODO : ask other worker about the full transaction against this Tx id
-                                        // let (names, addresses): (Vec<_>, _) = workers_addresses.iter().cloned().unzip();
-                                        // let tx_request = WorkerMessage::TxRequest(tx_id_vec);
-                                        // let serialized_tx_request = bincode::serialize(&tx_request).expect("Failed to serialize tx request");
-                                        // let bytes = Bytes::from(serialized_tx_request.clone());
-                                        // let handlers = network.broadcast(addresses, bytes).await;
-                                        // TODO: what do we do with the handlers
+                                        let (names, addresses): (Vec<_>, _) = workers_addresses.iter().cloned().unzip();
+                                        let tx_request = WorkerMessage::TxRequest(tx_id_vec, name);
+                                        let serialized_tx_request = bincode::serialize(&tx_request).expect("Failed to serialize tx request");
+                                        let bytes = Bytes::from(serialized_tx_request.clone());
+                                        // let _ = network.broadcast(addresses, bytes).await;
                                     },
                                     Err(e) => error!("{}", e),
                                 }

@@ -50,8 +50,8 @@ pub enum WorkerMessage {
     Batch(Batch),
     BatchRequest(Vec<Digest>, /* origin */ PublicKey),
     GlobalOrderInfo(GlobalOrder, MissedEdgePairs),
-    TxRequest(Vec<u8>),
-    TxResponse(Vec<u8>),
+    TxRequest(Vec<u8>, PublicKey),
+    TxResponse(Vec<u8>, Transaction),
 }
 
 pub struct Worker {
@@ -150,6 +150,7 @@ impl Worker {
         // The `GlobalOrderProcessor` hashes and stores the global order. It then forwards the batch's digest to the `PrimaryConnector`
         // that will send it to our primary machine.
         GlobalOrderProcessor::spawn(
+            name,
             id,
             store,
             missed_edge_manager.clone(),
@@ -315,6 +316,7 @@ impl Worker {
         let (tx_helper, rx_helper) = channel(CHANNEL_CAPACITY);
         let (tx_processor, rx_processor) = channel(CHANNEL_CAPACITY);
         let (tx_global_order_processor, rx_global_order_processor) = channel(CHANNEL_CAPACITY);
+        let (tx_transaction_helper, rx_transaction_helper) = channel(CHANNEL_CAPACITY);
 
         // Receive incoming messages from other workers.
         let mut address = self
@@ -330,6 +332,7 @@ impl Worker {
                 tx_helper,
                 tx_processor,
                 tx_global_order_processor,
+                tx_transaction_helper,
             },
         );
 
@@ -354,6 +357,7 @@ impl Worker {
         // The `GlobalOrderProcessor` hashes and stores the batches we receive from the other workers. It then forwards the
         // batch's digest to the `PrimaryConnector` that will send it to our primary.
         GlobalOrderProcessor::spawn(
+            self.name,
             self.id,
             self.store.clone(),
             self.missed_edge_manager.clone(),
@@ -366,6 +370,13 @@ impl Worker {
                 .iter()
                 .map(|(name, addresses)| (*name, addresses.worker_to_worker))
                 .collect(),
+        );
+
+        TransactionHelper::spawn(
+            self.id,
+            self.committee.clone(),
+            self.store.clone(),
+            /* rx_request */ rx_transaction_helper,
         );
 
         info!(
@@ -402,6 +413,7 @@ struct WorkerReceiverHandler {
     tx_helper: Sender<(Vec<Digest>, PublicKey)>,
     tx_processor: Sender<SerializedBatchMessage>,
     tx_global_order_processor: Sender<SerializedGlobalOrderMessage>,
+    tx_transaction_helper: Sender<Vec<u8>>,
 }
 
 #[async_trait]
@@ -431,15 +443,14 @@ impl MessageHandler for WorkerReceiverHandler {
                 .send(serialized.to_vec())
                 .await
                 .expect("Failed to send other workers' global order to the global order processor"),
-            Ok(WorkerMessage::TxRequest(..)) => {
-                // TODO: what do we do with the tx request
-                // Send to the worker that requested it
-                // Need a response handler as well
+            Ok(WorkerMessage::TxRequest(tx_id_vec, requestor)) => {
+                self.tx_transaction_helper
+                .send((tx_id_vec, requestor))
+                .await
+                .expect("Failed to send tx request");
             }
-            Ok(WorkerMessage::TxResponse(..)) => {
-                // TODO: what do we do with the tx response
-                // Send to the worker that requested it
-                // Need a response handler as well
+            Ok(WorkerMessage::TxResponse(tx_id_vec, tx)) => {
+                // send this to a storage helper
             }
 
             Err(e) => warn!("Serialization error: {}", e),
