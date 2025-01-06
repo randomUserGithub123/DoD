@@ -158,6 +158,7 @@ impl GlobalOrderMaker {
                             if !local_order_dags.sent{
                                 // let dag = LocalOrderGraph::get_dag_deserialized(batch);
                                 // self.update_missed_edges(dag.clone()).await;
+                                info!("global_order_maker::run : adding local order dag to local_order_dags, new length = {:?}", local_order_dags.local_order_dags.len() + 1);
                                 local_order_dags.local_order_dags.push(LocalOrderGraph::get_dag_deserialized(batch));
                             }
                             if (local_order_dags.local_order_dags.len() as u32) >= self.committee.quorum_threshold() && !local_order_dags.sent {
@@ -201,12 +202,13 @@ impl GlobalOrderMaker {
                 // TODO: Pending and fixed transaction threshold
                 // create a Global Order based on n-f received local orders 
                 let local_order_dags = self.rashnu_round_to_local_order_dags.get_mut(&batch_rashnu_round).unwrap();
-                let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(local_order_dags.local_order_dags.clone(), 0.0, 0.0); // 3.0, 2.5
-                let dag_obj = global_order_graph_obj.get_dag();
-                let global_order_sent_nodes = dag_obj.nodes();
+                //let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(local_order_dags.local_order_dags.clone(), 0.0, 0.0); // 3.0, 2.5
                 let fixed_tx_threshold = self.committee.fixed_tx_threshold();
                 let pending_tx_threshold = self.committee.pending_tx_threshold(self.gamma);
-                let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(self.local_order_dags.clone(), fixed_tx_threshold, pending_tx_threshold); // 3.0, 2.5
+                info!("global_order_maker::run : fixed_tx_threshold = {:?}, pending_tx_threshold = {:?}", fixed_tx_threshold as f32, pending_tx_threshold as f32);
+                let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(local_order_dags.local_order_dags.clone(), fixed_tx_threshold as f32, pending_tx_threshold as f32); // 3.0, 2.5
+                let dag_obj = global_order_graph_obj.get_dag();
+                let global_order_sent_nodes = dag_obj.nodes();
                 let global_order_graph = global_order_graph_obj.get_dag_serialized();
                 let missed_edges = global_order_graph_obj.get_missed_edges();
                 let mut missed_pairs: HashSet<(Node, Node)> = HashSet::new();
@@ -280,7 +282,7 @@ impl GlobalOrderMaker {
 
                 let batch_buffer_message = BatchBufferRoundDoneMessage {
                     sent_nodes,
-                    rashnu_round: self.rashnu_round,
+                    rashnu_round: batch_rashnu_round,
                 };
                 self.tx_batch_buffer.send(batch_buffer_message).await.expect("Failed to send batch buffer message");
             }

@@ -286,20 +286,13 @@ impl Client {
                 //     break 'main;
                 // }
                 
-                let mut send_futures = Vec::new();
                 for addr in target_addr {
                     let writer = writers.get_mut(&addr).unwrap();
-                    info!("sending sub tx");
-                    send_futures.push((*writer).send(bytes.clone()));
-                    break
+                    info!("sending sub tx to addr = {:?}", addr);
+                    let _ = writer.send(bytes.clone()).await;
+                    // break;
                 }
                 
-                for result in join_all(send_futures).await {
-                    if let Err(e) = result {
-                        warn!("Failed to send transaction: {}", e);
-                        break 'main;
-                    }
-                }
                 x += 1;
                 let end = Instant::now();
                 let duration = end.duration_since(start);

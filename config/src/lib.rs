@@ -144,6 +144,7 @@ pub struct Authority {
 #[derive(Clone, Deserialize)]
 pub struct Committee {
     pub authorities: BTreeMap<PublicKey, Authority>,
+    gamma: f64,
 }
 
 impl Import for Committee {}
@@ -172,13 +173,18 @@ impl Committee {
     pub fn quorum_threshold(&self) -> Stake {
         // If N = 3f + 1 + k (0 <= k < 3)
         // then (2 N + 3) / 3 = 2f + 1 + (2k + 2)/3 = 2f + 1 + k = N - f
+        // let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
+        // 2 * total_votes / 3 + 1
         let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
-        2 * total_votes / 3 + 1
+        let thresh = (((5 * total_votes) as f64 - (2 as f64 * self.gamma * total_votes as f64) + (2 as f64 * self.gamma) - 1.0) / 4 as f64) as u32;
+        info!("committee::quorum_threshold : total_votes = {:?}, thresh = {:?}", total_votes as f32, thresh as f32);
+        thresh
     }
 
     /// Returns the stake required for a transaction to be labelled as fixed (N - 2f)
     pub fn fixed_tx_threshold(&self) -> Stake {
-        self.validity_threshold()
+        let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
+        (((3 * total_votes) as f64 - (2 as f64 * self.gamma * total_votes as f64) + (2 as f64 * self.gamma) - 1.0) / 2 as f64) as u32
     }
 
     /// Returns the stake threshold for a transaction to be labelled as pending
@@ -192,7 +198,9 @@ impl Committee {
         // If N = 3f + 1 + k (0 <= k < 3)
         // then (N + 2) / 3 = f + 1 + k/3 = f + 1
         let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
-        (total_votes + 2) / 3
+        (((2 as f64 * self.gamma * total_votes as f64) - total_votes as f64 - (2 as f64 * self.gamma) + 5.0) / 4 as f64) as u32
+        // let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
+        // (total_votes + 2) / 3
     }
 
     /// Returns the primary addresses of the target primary.

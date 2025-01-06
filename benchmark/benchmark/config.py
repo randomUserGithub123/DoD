@@ -42,7 +42,7 @@ class Committee:
         }
     '''
 
-    def __init__(self, addresses, base_port):
+    def __init__(self, addresses, base_port, gamma):
         ''' The `addresses` field looks as follows:
             { 
                 "name": ["host", "host", ...],
@@ -59,7 +59,7 @@ class Committee:
         )
         assert len({len(x) for x in addresses.values()}) == 1
         assert isinstance(base_port, int) and base_port > 1024
-
+        assert isinstance(gamma, float) and 0.5 <= gamma <= 1.1
         port = base_port
         self.json = {'authorities': OrderedDict()}
         for name, hosts in addresses.items():
@@ -84,6 +84,7 @@ class Committee:
                 'primary': primary_addr,
                 'workers': workers_addr
             }
+            self.json['gamma'] = gamma
 
     def primary_addresses(self, faults=0):
         ''' Returns an ordered list of primaries' addresses. '''
@@ -152,13 +153,13 @@ class Committee:
 
 
 class LocalCommittee(Committee):
-    def __init__(self, names, port, workers):
+    def __init__(self, names, port, workers, gamma):
         assert isinstance(names, list)
         assert all(isinstance(x, str) for x in names)
         assert isinstance(port, int)
         assert isinstance(workers, int) and workers > 0
         addresses = OrderedDict((x, ['127.0.0.1']*(1+workers)) for x in names)
-        super().__init__(addresses, port)
+        super().__init__(addresses, port, gamma)
 
 
 class NodeParameters:
