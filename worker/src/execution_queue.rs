@@ -196,37 +196,37 @@ impl ParallelExecution {
         info!("ParallelExecution:execute");
         info!("ParallelExecution:execute :: #nodes in graph = {:?}", self.global_order_graph.node_count());
 
-        let mut in_degree_map: HashMap<Node, usize> = HashMap::new();
-        for node in self.global_order_graph.nodes(){
-            in_degree_map.insert(node, self.global_order_graph.edges_directed(node, Incoming).count());
-        }
+        // let mut in_degree_map: HashMap<Node, usize> = HashMap::new();
+        // for node in self.global_order_graph.nodes(){
+        //     in_degree_map.insert(node, self.global_order_graph.edges_directed(node, Incoming).count());
+        // }
 
-        let (tx_done, mut rx_done) = mpsc::unbounded_channel::<u64>();
-        {
-            // find nodes with in-degree 0
-            for (node, in_degree) in &in_degree_map{
-                if *in_degree == 0{
-                    // spaw a task to execute the node
-                    ParallelExecution::schedule_node(*node, self.writer_store.clone(), tx_done.clone());
-                }
-            }
-        }
+        // let (tx_done, mut rx_done) = mpsc::unbounded_channel::<u64>();
+        // {
+        //     // find nodes with in-degree 0
+        //     for (node, in_degree) in &in_degree_map{
+        //         if *in_degree == 0{
+        //             // spaw a task to execute the node
+        //             ParallelExecution::schedule_node(*node, self.writer_store.clone(), tx_done.clone());
+        //         }
+        //     }
+        // }
 
         // drop(tx_done);
-        while let Some(completed_id) = rx_done.recv().await {
-            info!("ParallelExecution::execute : tx_uid = {:?} is completed", completed_id);
-            // TODO: evaluate sending the message here
-            // decrement in-degree for the neighbors of the completed node
-            for neighbor in self.global_order_graph.neighbors(completed_id){
-                in_degree_map.entry(neighbor).and_modify(|degree| *degree -= 1);
-                if *in_degree_map.get(&neighbor).unwrap() == 0{
-                    // spawn a task to execute the node
-                    ParallelExecution::schedule_node(neighbor, self.writer_store.clone(), tx_done.clone());
-                }
-            }
-        }
+        // while let Some(completed_id) = rx_done.recv().await {
+        //     info!("ParallelExecution::execute : tx_uid = {:?} is completed", completed_id);
+        //     // TODO: evaluate sending the message here
+        //     // decrement in-degree for the neighbors of the completed node
+        //     for neighbor in self.global_order_graph.neighbors(completed_id){
+        //         in_degree_map.entry(neighbor).and_modify(|degree| *degree -= 1);
+        //         if *in_degree_map.get(&neighbor).unwrap() == 0{
+        //             // spawn a task to execute the node
+        //             ParallelExecution::schedule_node(neighbor, self.writer_store.clone(), tx_done.clone());
+        //         }
+        //     }
+        // }
 
-        println!("All transactions have completed.");
+        // println!("All transactions have completed.");
         
         // TEST: START
         for tx_uid in self.global_order_graph.nodes(){
@@ -249,46 +249,6 @@ impl ParallelExecution {
         }
         // info!("ParallelExecution::execute : Test ends");
         // TEST: END
-
-
-
-        // let mut incoming_count: HashMap<Node, usize> = HashMap::new();
-        // for node in self.global_order_graph.nodes(){
-        //     incoming_count.entry(node).or_insert(0);
-        //     for neighbor in self.global_order_graph.neighbors(node){
-        //         incoming_count.entry(neighbor).or_insert(0);
-        //         incoming_count.insert(neighbor, incoming_count.get(&neighbor).unwrap()+1);
-        //     }                   
-        // }
-
-        // // find root nodes of the graph
-        // let mut roots: Vec<Node> = Vec::new();
-        // for (node, count) in &incoming_count{
-        //     if *count==0{
-        //         roots.push(*node);
-        //     }
-        // }
-        // info!("ParallelExecution:execute :: #roots found = {:?}", roots.len());
-        // // create a shared queue: https://stackoverflow.com/questions/72879440/how-to-use-vecdeque-in-multi-threaded-app
-        // let shared_queue = Arc::new(Mutex::new(VecDeque::new()));
-        
-        // // initialize the shared queue with root nodes
-        // for root in roots{
-        //     shared_queue.lock().unwrap().push_back(root);
-        // }
-
-        // // Traverse the graph and execute the nodes using thread pool
-        // let mut blocking_tasks: Vec<JoinHandle<()>> = Vec::new();
-        // for _ in 0..MAX_THREADS {
-        //     let task = ParallelExecutionThread::spawn(self.global_order_graph.clone(), self.store.clone(), self.writer_store.clone() ,self.sb_handler.clone(), shared_queue.clone());
-        //     blocking_tasks.push(task);
-        // }
-
-        // // joining all the threads
-        // for task in blocking_tasks{
-        //     let _ = task.await;
-        // }
-        
     }
 }
 

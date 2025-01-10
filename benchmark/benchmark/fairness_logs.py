@@ -5,6 +5,7 @@ from multiprocessing import Pool
 from os.path import join
 from re import findall, search
 from statistics import mean
+import random
 
 from benchmark.utils import Print
 
@@ -38,6 +39,9 @@ class FairnessLogParser:
             = zip(*results)
         self.misses = sum(misses)
 
+        print(len(self.sent_samples[0]))
+        # print(self.sent_samples[random.randint(0, len(self.sent_samples)-1)])
+
         # Parse the primaries logs.
         try:
             with Pool() as p:
@@ -54,10 +58,45 @@ class FairnessLogParser:
                 results = p.map(self._parse_workers, workers)
         except (ValueError, IndexError, AttributeError) as e:
             raise FairnessParseError(f'Failed to parse workers\' logs: {e}')
-        sizes, self.received_samples, workers_ips = zip(*results)
+        sizes, self.received_samples, workers_ips, all_batch_maker_tx_uids, all_global_dependency_graph_tx_uids, all_global_order_maker_tx_uids, all_parallel_execution_tx_uids, all_processor_tx_uids = zip(*results)
         self.sizes = {
             k: v for x in sizes for k, v in x.items() if k in self.commits
         }
+
+        print(f"Number of batch maker transactions: {len(all_batch_maker_tx_uids[0])}")
+        print(f"Number of processor transactions: {len(all_processor_tx_uids[0])}")
+        print(f"Number of global dependency graph transactions: {len(all_global_dependency_graph_tx_uids[0])}")
+        # print("Number of global dependency graph transactions with count >= 4", len([x for x in all_global_dependency_graph_tx_uids[0] if all_global_dependency_graph_tx_uids[0][x] >= 4]))
+        print(f"Number of global order maker transactions: {len(all_global_order_maker_tx_uids[0])}")
+        print(f"Number of parallel execution transactions: {len(all_parallel_execution_tx_uids[0])}")
+
+        worker_bm_tx_uids = all_batch_maker_tx_uids[0]
+        worker_gdg_tx_uids = all_global_dependency_graph_tx_uids[0]
+        worker_gom_tx_uids = all_global_order_maker_tx_uids[0]
+        worker_pe_tx_uids = all_parallel_execution_tx_uids[0]
+        worker_processor_tx_uids = all_processor_tx_uids[0]
+
+        txs_not_found_in_gdg = 0
+        txs_not_found_in_gom = 0
+        txs_not_found_in_pe = 0
+        txs_not_found_in_processor = 0
+        for tx_uid in worker_bm_tx_uids:
+            if tx_uid not in worker_gdg_tx_uids:
+                # print(f"Transaction {tx_uid} not found in global dependency graph")
+                txs_not_found_in_gdg += 1
+            if tx_uid not in worker_gom_tx_uids:
+                # print(f"Transaction {tx_uid} not found in global order maker")
+                txs_not_found_in_gom += 1
+            if tx_uid not in worker_pe_tx_uids:
+                # print(f"Transaction {tx_uid} not found in parallel execution")
+                txs_not_found_in_pe += 1
+            if tx_uid not in worker_processor_tx_uids:
+                # print(f"Transaction {tx_uid} not found in processor")
+                txs_not_found_in_processor += 1
+        print(f"Number of transactions not found in global dependency graph: {txs_not_found_in_gdg}")
+        print(f"Number of transactions not found in global order maker: {txs_not_found_in_gom}")
+        print(f"Number of transactions not found in parallel execution: {txs_not_found_in_pe}")
+        print(f"Number of transactions not found in processor: {txs_not_found_in_processor}")
 
         # Determine whether the primary and the workers are collocated.
         self.collocate = set(primary_ips) == set(workers_ips)
@@ -149,9 +188,24 @@ class FairnessLogParser:
         tmp = findall(r'Batch ([^ ]+) contains sample tx (\d+)', log)
         samples = {int(s): d for d, s in tmp}
 
+        tmp = findall(r'batch_maker::seal : tx_uid to store = (\d+)', log)
+        all_batch_maker_tx_uids = {int(s) for s in tmp}
+
+        tmp = findall(r'global_dependency_graph::new : tx = (\d+)', log)
+        all_global_dependency_graph_tx_uids = {int(s) for s in tmp}
+
+        tmp = findall(r'global_order_maker::run : sending node = (\d+)', log)
+        all_global_order_maker_tx_uids = {int(s) for s in tmp}
+
+        tmp = findall(r'ParallelExecution::execute : tx_uid = (\d+)', log)
+        all_parallel_execution_tx_uids = {int(s) for s in tmp}
+
+        tmp = findall(r'Processor::spawn : tx_uid = (\d+)', log)
+        all_processor_tx_uids = {int(s) for s in tmp}
+
         ip = search(r'booted on (\d+.\d+.\d+.\d+)', log).group(1)
 
-        return sizes, samples, ip
+        return sizes, samples, ip, all_batch_maker_tx_uids, all_global_dependency_graph_tx_uids, all_global_order_maker_tx_uids, all_parallel_execution_tx_uids, all_processor_tx_uids
 
     def _to_posix(self, string):
         x = datetime.fromisoformat(string.replace('Z', '+00:00'))

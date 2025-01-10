@@ -15,10 +15,10 @@ def local(ctx, debug=True):
     ''' Run benchmarks on localhost '''
     bench_params = {
         'faults': 0,
-        'nodes': 2,
+        'nodes': 5,
         'workers': 1,
         'clients': 1,
-        'rate': 50_000,
+        'rate': 100_000,
         'tx_size': 512,
         'n_users': 100,
         'shards': [[0,99]],
@@ -32,9 +32,9 @@ def local(ctx, debug=True):
         'gc_depth': 50,  # rounds
         'sync_retry_delay': 10_000,  # ms
         'sync_retry_nodes': 3,  # number of nodes
-        'batch_size': 500_000,  # bytes
+        'batch_size': 200_000,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 0.3,
+        'gamma': 0.7,
     }
     try:
         ret = LocalBench(bench_params, node_params).run(debug)
@@ -124,7 +124,7 @@ def remote(ctx, debug=False):
         'sync_retry_nodes': 3,  # number of nodes
         'batch_size': 500_000,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 0.5,
+        'gamma': 0.7,
     }
     try:
         # Bench(ctx).run(bench_params, node_params, debug)

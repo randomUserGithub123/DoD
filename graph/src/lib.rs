@@ -131,6 +131,7 @@ impl GlobalDependencyGraph{
         let mut loop_count:u64 = 0;
         for local_order_graph in &local_order_graphs{
             for node in local_order_graph.nodes(){
+                // info!("global_dependency_graph::new : tx = {:?}", node);
                 let count = *transaction_counts.entry(node).or_insert(0);
                 transaction_counts.insert(node, count+1);
                 loop_count = loop_count + 1;
