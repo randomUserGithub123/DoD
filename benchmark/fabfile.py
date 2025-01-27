@@ -14,14 +14,14 @@ from benchmark.remote import Bench, CloudLabBench, BenchError
 def local(ctx, debug=True):
     ''' Run benchmarks on localhost '''
     bench_params = {
-        'faults': 0,
+        'faults': 1,
         'nodes': 5,
-        'workers': 1,
-        'clients': 1,
+        'workers': 4,
+        'clients': 6,
         'rate': 100_000,
         'tx_size': 512,
         'n_users': 100,
-        'shards': [[0,99]],
+        'shards': [[0,25],[26,50],[51,75],[76,99]],
         'skew_factor': 0.1,
         'prob_choose_mtx': 1.0,
         'duration': 20,
@@ -32,9 +32,9 @@ def local(ctx, debug=True):
         'gc_depth': 50,  # rounds
         'sync_retry_delay': 10_000,  # ms
         'sync_retry_nodes': 3,  # number of nodes
-        'batch_size': 200_000,  # bytes
+        'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 0.7,
+        'gamma': 1.0,
     }
     try:
         ret = LocalBench(bench_params, node_params).run(debug)

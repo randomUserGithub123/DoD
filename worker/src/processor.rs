@@ -49,12 +49,12 @@ impl Processor {
                         let dag: DiGraphMap<Node, u8> = LocalOrderGraph::get_dag_deserialized(serialized_local_order_graph_obj);
                         for node in dag.nodes(){
                             // TODO : Tx id 
-                            info!("Processor::spawn : tx_uid = {:?}", node);
+                            // info!("Processor::spawn : tx_uid = {:?}", node);
                         }
                     },
                     _ => panic!("Processor::spawn : Unexpected batch"),
                 }
-                info!("Processor::spawn : done processing batch");
+                // info!("Processor::spawn : done processing batch");
 
                 // send batch to global order
                 let message1 = GlobalOrderMakerMessage {batch:batch.clone(), own_digest:own_digest}; 

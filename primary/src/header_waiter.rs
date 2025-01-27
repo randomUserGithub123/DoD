@@ -166,7 +166,7 @@ impl HeaderWaiter {
                                     .worker(&author, &worker_id)
                                     .expect("Author of valid header is not in the committee")
                                     .primary_to_worker;
-                                info!("sending PrimaryWorkerMessage::Synchronize to sync missing payload, digests = {:?}", digests);
+                                // info!("sending PrimaryWorkerMessage::Synchronize to sync missing payload, digests = {:?}", digests);
                                 let message = PrimaryWorkerMessage::Synchronize(digests, author);
                                 let bytes = bincode::serialize(&message)
                                     .expect("Failed to serialize batch sync request");

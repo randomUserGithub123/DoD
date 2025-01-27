@@ -123,8 +123,8 @@ impl GlobalOrderMaker {
     /// Main loop.
     async fn run(&mut self) {
         while let Some(GlobalOrderMakerMessage { batch, own_digest }) = self.rx_batch.recv().await {
-            use std::time::Instant;
-            let start = Instant::now();
+            // use std::time::Instant;
+            // let start = Instant::now();
             // Get the new round number if advanced (non blocking)
             // match self.rx_round.try_recv(){
             //     Ok(round) => {
@@ -150,9 +150,9 @@ impl GlobalOrderMaker {
                         Some(batch_round_vec) => {
                             let batch_round_arr: [u8; 8] = batch_round_vec.try_into().unwrap_or_else(|batch_round_vec: Vec<u8>| panic!("Expected a Vec of length {} but it was {}", 8, batch_round_vec.len()));
                             batch_rashnu_round = u64::from_le_bytes(batch_round_arr);
-                            info!("global_order_maker::run : batch_rashnu_round = {:?}", batch_rashnu_round);
+                            // info!("global_order_maker::run : batch_rashnu_round = {:?}", batch_rashnu_round);
 
-                            info!("global_order_maker::run : batch_rashnu_round = {:?} digest = {:?} own_digest = {:?}", batch_rashnu_round, debug_batch_digest, own_digest);
+                            // info!("global_order_maker::run : batch_rashnu_round = {:?} digest = {:?} own_digest = {:?}", batch_rashnu_round, debug_batch_digest, own_digest);
                             
                             if !self.rashnu_round_to_local_order_dags.contains_key(&batch_rashnu_round){
                                 self.rashnu_round_to_local_order_dags.insert(batch_rashnu_round, LocalOrderDags { local_order_dags: Vec::new(), sent: false });
@@ -161,11 +161,11 @@ impl GlobalOrderMaker {
                             if !local_order_dags.sent{
                                 // let dag = LocalOrderGraph::get_dag_deserialized(batch);
                                 // self.update_missed_edges(dag.clone()).await;
-                                info!("global_order_maker::run : adding local order dag to local_order_dags, new length = {:?}", local_order_dags.local_order_dags.len() + 1);
+                                // info!("global_order_maker::run : adding local order dag to local_order_dags, new length = {:?}", local_order_dags.local_order_dags.len() + 1);
                                 local_order_dags.local_order_dags.push(LocalOrderGraph::get_dag_deserialized(batch));
                             }
                             if (local_order_dags.local_order_dags.len() as u32) >= self.committee.quorum_threshold() && !local_order_dags.sent {
-                                info!("global_order_maker::run : send_order = true, batch_digest = {:?}", debug_batch_digest);
+                                // info!("global_order_maker::run : send_order = true, batch_digest = {:?}", debug_batch_digest);
                                 local_order_dags.sent = true;
                                 send_order = true;
                             }
@@ -204,23 +204,23 @@ impl GlobalOrderMaker {
             if send_order{
                 // TODO: Pending and fixed transaction threshold
                 // create a Global Order based on n-f received local orders 
-                let global_order_start = Instant::now();
+                // let global_order_start = Instant::now();
                 let local_order_dags = self.rashnu_round_to_local_order_dags.get_mut(&batch_rashnu_round).unwrap();
                 //let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(local_order_dags.local_order_dags.clone(), 0.0, 0.0); // 3.0, 2.5
                 let fixed_tx_threshold = self.committee.fixed_tx_threshold();
                 let pending_tx_threshold = self.committee.pending_tx_threshold(self.gamma);
-                info!("global_order_maker::run : fixed_tx_threshold = {:?}, pending_tx_threshold = {:?}", fixed_tx_threshold as f32, pending_tx_threshold as f32);
+                // info!("global_order_maker::run : fixed_tx_threshold = {:?}, pending_tx_threshold = {:?}", fixed_tx_threshold as f32, pending_tx_threshold as f32);
                 let global_order_graph_obj: GlobalOrderGraph = GlobalOrderGraph::new(local_order_dags.local_order_dags.clone(), fixed_tx_threshold as f32, pending_tx_threshold as f32); // 3.0, 2.5
                 let dag_obj = global_order_graph_obj.get_dag();
                 let global_order_sent_nodes = dag_obj.nodes();
                 let global_order_graph = global_order_graph_obj.get_dag_serialized();
                 let missed_edges = global_order_graph_obj.get_missed_edges();
                 let mut missed_pairs: HashSet<(Node, Node)> = HashSet::new();
-                let global_order_end = Instant::now();
-                let global_order_duration = global_order_end.duration_since(global_order_start);
-                info!("global_order_maker::run : global_order_duration = {:?}, round = {:?}", global_order_duration, batch_rashnu_round);
+                // let global_order_end = Instant::now();
+                // let global_order_duration = global_order_end.duration_since(global_order_start);
+                // info!("global_order_maker::run : global_order_duration = {:?}, round = {:?}", global_order_duration, batch_rashnu_round);
 
-                info!("global_order_maker::run : digest = {:?}, num of nodes = {:?}", debug_batch_digest, global_order_graph_obj.get_dag().node_count());
+                // info!("global_order_maker::run : digest = {:?}, num of nodes = {:?}", debug_batch_digest, global_order_graph_obj.get_dag().node_count());
                 
                 // for ((from, to), count) in &missed_edges{
                 //     {
@@ -234,7 +234,7 @@ impl GlobalOrderMaker {
                 //     }
                 // }
 
-                info!("global_order_maker::run : global_order_graph size = {:?}", global_order_graph.len());
+                // info!("global_order_maker::run : global_order_graph size = {:?}", global_order_graph.len());
                 let global_order_len = global_order_graph.len();
                 let message = WorkerMessage::GlobalOrderInfo(global_order_graph, missed_pairs.clone());
                 let serialized = bincode::serialize(&message).expect("Failed to serialize global order graph");
@@ -252,14 +252,14 @@ impl GlobalOrderMaker {
                             .unwrap(),
                     );
 
-                    for id in 1..=4 {
-                        // NOTE: This log entry is used to compute performance.
-                        info!(
-                            "Batch {:?} contains sample tx {}",
-                            digest,
-                            id
-                        );
-                    }
+                    // for id in 1..=4 {
+                    //     // NOTE: This log entry is used to compute performance.
+                    //     info!(
+                    //         "Batch {:?} contains sample tx {}",
+                    //         digest,
+                    //         id
+                    //     );
+                    // }
 
                     // NOTE: This log entry is used to compute performance.
                     info!("Batch {:?} contains {} B", digest, global_order_len*512);
@@ -272,7 +272,7 @@ impl GlobalOrderMaker {
                 let handlers = self.network.broadcast(addresses, bytes).await;
                 
                 // Send the batch through the deliver channel for further processing.
-                info!("Send Global order to Quorum Waiter");
+                // info!("Send Global order to Quorum Waiter");
                 self.tx_message
                 .send(GlobalOrderQuorumWaiterMessage {
                     global_order_info: serialized,
@@ -285,7 +285,7 @@ impl GlobalOrderMaker {
                 let mut sent_nodes = Vec::new();
                 for node in global_order_sent_nodes{
                     // tx uid of the transaction
-                    info!("global_order_maker::run : sending node = {:?}", node);
+                    // info!("global_order_maker::run : sending node = {:?}", node);
                     sent_nodes.push(node);
                 }
 
@@ -295,9 +295,9 @@ impl GlobalOrderMaker {
                 };
                 self.tx_batch_buffer.send(batch_buffer_message).await.expect("Failed to send batch buffer message");
 
-                let end = Instant::now();
-                let duration = end.duration_since(start);
-                info!("global_order_maker::run : duration = {:?}, round = {:?}", duration, batch_rashnu_round);
+                // let end = Instant::now();
+                // let duration = end.duration_since(start);
+                // info!("global_order_maker::run : duration = {:?}, round = {:?}", duration, batch_rashnu_round);
             }
         }
     }

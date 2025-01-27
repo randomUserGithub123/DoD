@@ -51,9 +51,9 @@ impl Synchronizer {
     /// header for when we will have its complete payload.
     pub async fn missing_payload(&mut self, header: &Header) -> DagResult<bool> {
         // We don't store the payload of our own workers.
-        info!("missing_payload: header.author = {:?}, self.name = {:?}", header.author, self.name);
+        // info!("missing_payload: header.author = {:?}, self.name = {:?}", header.author, self.name);
         if header.author == self.name {
-            info!("Return with OK(false)");
+            // info!("Return with OK(false)");
             return Ok(false);
         }
 
@@ -75,12 +75,12 @@ impl Synchronizer {
                 missing.insert(digest.clone(), *worker_id);
             }
         }
-        info!("missing_payload: header = {:?}, missings = {:?}", header, missing);
+        // info!("missing_payload: header = {:?}, missings = {:?}", header, missing);
         if missing.is_empty() {
             return Ok(false);
         }
 
-        info!("missing_payload: sending to tx_header_waiter, header = {:?}", header);
+        // info!("missing_payload: sending to tx_header_waiter, header = {:?}", header);
         self.tx_header_waiter
             .send(WaiterMessage::SyncBatches(missing, header.clone()))
             .await

@@ -61,7 +61,7 @@ impl QuorumWaiter {
     /// Main loop.
     async fn run(&mut self) {
         while let Some(QuorumWaiterMessage { batch, handlers }) = self.rx_message.recv().await {
-            info!("quorum_waiter::run: received batch");
+            // info!("quorum_waiter::run: received batch");
             let mut wait_for_quorum: FuturesUnordered<_> = handlers
                 .into_iter()
                 .map(|(name, handler)| {
@@ -76,7 +76,7 @@ impl QuorumWaiter {
             let mut total_stake = self.stake;
             while let Some(stake) = wait_for_quorum.next().await {
                 total_stake += stake;
-                info!("quorum_waiter::run: total_stake = {:?}", total_stake);
+                // info!("quorum_waiter::run: total_stake = {:?}", total_stake);
                 if total_stake >= self.committee.quorum_threshold() {
                     self.tx_batch
                         .send(batch)
@@ -85,7 +85,7 @@ impl QuorumWaiter {
                     break;
                 }
             }
-            info!("quorum_waiter::run: done delivering batch");
+            // info!("quorum_waiter::run: done delivering batch");
         }
     }
 }

@@ -52,7 +52,7 @@ impl ExecutionQueue {
             Ok(Some(global_order_info)) => {
                 match bincode::deserialize(&global_order_info).unwrap() {
                     WorkerMessage::GlobalOrderInfo(_global_order_graph, missed) => {
-                        info!("Adding digest = {:?} to the execution queue", digest);
+                        // info!("Adding digest = {:?} to the execution queue", digest);
                         self.queue.push_back(QueueElement{ global_order_digest: digest, missed_pairs: missed, updated_edges: Vec::new()});
                     },
                     _ => panic!("PrimaryWorkerMessage::Execute : Unexpected batch"),
@@ -65,31 +65,31 @@ impl ExecutionQueue {
 
     pub async fn execute(&mut self, digest: Digest){
         // add new element in the queue associated with this new digest
-        info!("execution STARTS");
+        // info!("execution STARTS");
         self.add_to_queue(digest).await;
-        info!("execution queue length = {:?}", self.queue.len());
+        // info!("execution queue length = {:?}", self.queue.len());
 
         // traverse the queue from front and update missing pairs if any
         for element in self.queue.iter_mut() {
-            info!("New element to check for missed pairs");
+            // info!("New element to check for missed pairs");
             // check if missed edges are found for this digest
             if element.missed_pairs.is_empty(){
-                info!("No missed pairs");
+                // info!("No missed pairs");
                 continue;
             }
 
             let mut updated_pairs: Vec<(Node, Node)> = Vec::new();
             let mut updated_edges: Vec<(Node, Node)> = Vec::new();
             for missed_pair in &element.missed_pairs{
-                info!("missed pair = {:?}", missed_pair);
+                // info!("missed pair = {:?}", missed_pair);
                 let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
                 if missed_edge_manager_lock.is_missing_edge_updated(missed_pair.0, missed_pair.1).await{
-                    info!("missed edge found");
+                    // info!("missed edge found");
                     updated_pairs.push((missed_pair.0, missed_pair.1));
                     updated_edges.push((missed_pair.0, missed_pair.1));
                 }
                 else if missed_edge_manager_lock.is_missing_edge_updated(missed_pair.1, missed_pair.0).await{
-                    info!("missed edge found");
+                    // info!("missed edge found");
                     updated_pairs.push((missed_pair.0, missed_pair.1));
                     updated_edges.push((missed_pair.1, missed_pair.0));
                 }
@@ -119,7 +119,7 @@ impl ExecutionQueue {
             }
         }
 
-        info!("n_elements_to_execute = {:?}", n_elements_to_execute);
+        // info!("n_elements_to_execute = {:?}", n_elements_to_execute);
 
         // remove queue elements and Execute global order if no more missed edges
         for _ in 0..n_elements_to_execute{
@@ -132,7 +132,7 @@ impl ExecutionQueue {
                         WorkerMessage::GlobalOrderInfo(global_order_graph_serialized, _missed) => {
                             // deserialize received serialized glbal order graph
                             let dag: DiGraphMap<Node, u8> = GlobalOrderGraph::get_dag_deserialized(global_order_graph_serialized);
-                            info!("Sending graph to the parallel execution");
+                            // info!("Sending graph to the parallel execution");
                             let mut parallel_execution:  ParallelExecution = ParallelExecution::new(dag, self.store.clone(), self.writer_store.clone(), self.sb_handler.clone());
                             parallel_execution.execute().await;    
                         },
@@ -170,19 +170,19 @@ impl ParallelExecution {
                 
         tokio::spawn(async move {
 
-            info!("ParallelExecution::schedule_node : tx_uid = {:?} is going to execute in", tx_uid);
+            // info!("ParallelExecution::schedule_node : tx_uid = {:?} is going to execute in", tx_uid);
             let tx_id_vec = tx_uid.to_be_bytes().to_vec();
             {
                 let mut writer_store_lock = writer_store.lock().await;
                 if writer_store_lock.writer_exists(tx_uid){
-                    info!("ParallelExecution::schedule_node : tx_uid = {:?} does exist in writer store", tx_uid);
+                    // info!("ParallelExecution::schedule_node : tx_uid = {:?} does exist in writer store", tx_uid);
                     let mut writer: Arc<futures::lock::Mutex<Writer>> = writer_store_lock.get_writer(tx_uid);
                     let mut writer_lock = writer.lock().await;
                     let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
                     writer_store_lock.delete_writer(tx_uid);
                 }
                 else{
-                    info!("ParallelExecution::schedule_node : tx_uid = {:?} does not exist in writer store", tx_uid);
+                    // info!("ParallelExecution::schedule_node : tx_uid = {:?} does not exist in writer store", tx_uid);
                 }
             }
             // TODO: execute the node
@@ -193,8 +193,8 @@ impl ParallelExecution {
 
     pub async fn execute(&mut self){
         // find incoming edge count for each node in the graph
-        info!("ParallelExecution:execute");
-        info!("ParallelExecution:execute :: #nodes in graph = {:?}", self.global_order_graph.node_count());
+        // info!("ParallelExecution:execute");
+        // info!("ParallelExecution:execute :: #nodes in graph = {:?}", self.global_order_graph.node_count());
 
         // let mut in_degree_map: HashMap<Node, usize> = HashMap::new();
         // for node in self.global_order_graph.nodes(){
@@ -230,12 +230,12 @@ impl ParallelExecution {
         
         // TEST: START
         for tx_uid in self.global_order_graph.nodes(){
-            info!("ParallelExecution::execute : tx_uid = {:?} is going to execute in", tx_uid);
+            // info!("ParallelExecution::execute : tx_uid = {:?} is going to execute in", tx_uid);
             let tx_id_vec = tx_uid.to_be_bytes().to_vec();
             {
                 let mut writer_store_lock = self.writer_store.lock().await;
                 if writer_store_lock.writer_exists(tx_uid){
-                    info!("ParallelExecution::execute : tx_uid = {:?} does exist in writer store", tx_uid);
+                    // info!("ParallelExecution::execute : tx_uid = {:?} does exist in writer store", tx_uid);
                     let mut writer: Arc<futures::lock::Mutex<Writer>> = writer_store_lock.get_writer(tx_uid);
                     // drop(writer_store_lock);
                     let mut writer_lock = writer.lock().await;
@@ -243,7 +243,7 @@ impl ParallelExecution {
                     writer_store_lock.delete_writer(tx_uid);
                 }
                 else{
-                    info!("ParallelExecution::execute : tx_uid = {:?} does not exist in writer store", tx_uid);
+                    // info!("ParallelExecution::execute : tx_uid = {:?} does not exist in writer store", tx_uid);
                 }
             }
         }
@@ -298,7 +298,7 @@ impl ParallelExecutionThread {
 
                 tx_uid = locked_queue.pop_front().unwrap();
             }
-            info!("tx_uid = {:?} is going to execute in ParallelExecutionThread", tx_uid);
+            // info!("tx_uid = {:?} is going to execute in ParallelExecutionThread", tx_uid);
             let tx_id_vec = tx_uid.to_be_bytes().to_vec();
 
             // Get the actual transaction against tx_id from the Store

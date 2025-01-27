@@ -32,7 +32,7 @@ impl PrimaryConnector {
     async fn run(&mut self) {
         while let Some(digest) = self.rx_digest.recv().await {
             // Send the digest through the network.
-            info!("Primary Connector received global order");
+            // info!("Primary Connector received global order");
             self.network
                 .send(self.primary_address, Bytes::from(digest))
                 .await;
