@@ -193,60 +193,78 @@ impl ParallelExecution {
 
     pub async fn execute(&mut self){
         // find incoming edge count for each node in the graph
-        // info!("ParallelExecution:execute");
-        // info!("ParallelExecution:execute :: #nodes in graph = {:?}", self.global_order_graph.node_count());
+        info!("ParallelExecution:execute");
+        info!("ParallelExecution:execute :: #nodes in graph = {:?}", self.global_order_graph.node_count());
+        let total_nodes = self.global_order_graph.node_count();
+        let mut scheduled_count = 0;
 
-        // let mut in_degree_map: HashMap<Node, usize> = HashMap::new();
-        // for node in self.global_order_graph.nodes(){
-        //     in_degree_map.insert(node, self.global_order_graph.edges_directed(node, Incoming).count());
-        // }
+        let mut in_degree_map: HashMap<Node, usize> = HashMap::new();
+        for node in self.global_order_graph.nodes(){
+            in_degree_map.insert(node, self.global_order_graph.edges_directed(node, Incoming).count());
+        }
 
-        // let (tx_done, mut rx_done) = mpsc::unbounded_channel::<u64>();
-        // {
-        //     // find nodes with in-degree 0
-        //     for (node, in_degree) in &in_degree_map{
-        //         if *in_degree == 0{
-        //             // spaw a task to execute the node
-        //             ParallelExecution::schedule_node(*node, self.writer_store.clone(), tx_done.clone());
-        //         }
-        //     }
-        // }
-
-        // drop(tx_done);
-        // while let Some(completed_id) = rx_done.recv().await {
-        //     info!("ParallelExecution::execute : tx_uid = {:?} is completed", completed_id);
-        //     // TODO: evaluate sending the message here
-        //     // decrement in-degree for the neighbors of the completed node
-        //     for neighbor in self.global_order_graph.neighbors(completed_id){
-        //         in_degree_map.entry(neighbor).and_modify(|degree| *degree -= 1);
-        //         if *in_degree_map.get(&neighbor).unwrap() == 0{
-        //             // spawn a task to execute the node
-        //             ParallelExecution::schedule_node(neighbor, self.writer_store.clone(), tx_done.clone());
-        //         }
-        //     }
-        // }
-
-        // println!("All transactions have completed.");
-        
-        // TEST: START
-        for tx_uid in self.global_order_graph.nodes(){
-            // info!("ParallelExecution::execute : tx_uid = {:?} is going to execute in", tx_uid);
-            let tx_id_vec = tx_uid.to_be_bytes().to_vec();
-            {
-                let mut writer_store_lock = self.writer_store.lock().await;
-                if writer_store_lock.writer_exists(tx_uid){
-                    // info!("ParallelExecution::execute : tx_uid = {:?} does exist in writer store", tx_uid);
-                    let mut writer: Arc<futures::lock::Mutex<Writer>> = writer_store_lock.get_writer(tx_uid);
-                    // drop(writer_store_lock);
-                    let mut writer_lock = writer.lock().await;
-                    let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
-                    writer_store_lock.delete_writer(tx_uid);
-                }
-                else{
-                    // info!("ParallelExecution::execute : tx_uid = {:?} does not exist in writer store", tx_uid);
+        let (tx_done, mut rx_done) = mpsc::unbounded_channel::<u64>();
+        {
+            // find nodes with in-degree 0
+            for (node, in_degree) in &in_degree_map{
+                if *in_degree == 0{
+                    // spawn a task to execute the node
+                    scheduled_count += 1;
+                    // info!("ParallelExecution::execute : scheduling count = {:?}", scheduled_count);
+                    ParallelExecution::schedule_node(*node, self.writer_store.clone(), tx_done.clone());
                 }
             }
         }
+
+        // drop(tx_done);
+        let mut completed_count = 0;
+        while let Some(completed_id) = rx_done.recv().await {
+            completed_count += 1;
+            if completed_count == total_nodes{
+                break;
+            }
+            let mut flag = false;
+            if completed_count == scheduled_count{
+                flag = true;
+            }
+            // info!("ParallelExecution::execute : tx_uid = {:?} is completed, completed_count = {:?}, node_count = {:?}", completed_id, completed_count, total_nodes);
+            // TODO: evaluate sending the message here
+            // decrement in-degree for the neighbors of the completed node
+            for neighbor in self.global_order_graph.neighbors(completed_id){
+                in_degree_map.entry(neighbor).and_modify(|degree| *degree -= 1);
+                if *in_degree_map.get(&neighbor).unwrap() == 0{
+                    // spawn a task to execute the node
+                    scheduled_count += 1;
+                    // info!("ParallelExecution::execute : scheduling count = {:?}", scheduled_count);
+                    ParallelExecution::schedule_node(neighbor, self.writer_store.clone(), tx_done.clone());
+                }
+            }
+            if flag && completed_count == scheduled_count{
+                break;
+            }
+        }
+
+       info!("All transactions have completed, scheduled_count = {:?}, completed_count = {:?}, total_nodes = {:?}", scheduled_count, completed_count, total_nodes);
+        
+        // TEST: START
+        // for tx_uid in self.global_order_graph.nodes(){
+        //     // info!("ParallelExecution::execute : tx_uid = {:?} is going to execute in", tx_uid);
+        //     let tx_id_vec = tx_uid.to_be_bytes().to_vec();
+        //     {
+        //         let mut writer_store_lock = self.writer_store.lock().await;
+        //         if writer_store_lock.writer_exists(tx_uid){
+        //             // info!("ParallelExecution::execute : tx_uid = {:?} does exist in writer store", tx_uid);
+        //             let mut writer: Arc<futures::lock::Mutex<Writer>> = writer_store_lock.get_writer(tx_uid);
+        //             // drop(writer_store_lock);
+        //             let mut writer_lock = writer.lock().await;
+        //             let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
+        //             writer_store_lock.delete_writer(tx_uid);
+        //         }
+        //         else{
+        //             // info!("ParallelExecution::execute : tx_uid = {:?} does not exist in writer store", tx_uid);
+        //         }
+        //     }
+        // }
         // info!("ParallelExecution::execute : Test ends");
         // TEST: END
     }
