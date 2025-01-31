@@ -10,7 +10,6 @@ from math import ceil
 from copy import deepcopy
 import subprocess
 
-from benchmark.local import LocalBench, USE_FAIRNESS_PARSER
 from benchmark.config import Committee, Key, NodeParameters, BenchParameters, ConfigError
 from benchmark.utils import BenchError, Print, PathMaker, progress_bar
 from benchmark.commands import CommandMaker
@@ -18,6 +17,7 @@ from benchmark.logs import LogParser, ParseError
 from benchmark.instance import InstanceManager, CloudLabInstanceManager
 from benchmark.fairness_logs import FairnessParseError, FairnessLogParser
 
+USE_FAIRNESS_PARSER = True
 
 class FabricError(Exception):
     ''' Wrapper for Fabric exception with a meaningfull error message. '''
@@ -531,7 +531,7 @@ class CloudLabBench:
                 (x, y) for x, y in zip(names, hosts)
             )
         Print.info(f'addresses = {addresses}')
-        committee = Committee(addresses, self.settings.base_port)
+        committee = Committee(addresses, self.settings.base_port, node_parameters.gamma)
         committee.print(PathMaker.committee_file())
 
         node_parameters.print(PathMaker.parameters_file())

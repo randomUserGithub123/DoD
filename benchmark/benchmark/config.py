@@ -183,6 +183,7 @@ class NodeParameters:
             raise ConfigError('Invalid parameters type')
 
         self.json = json
+        self.gamma = json['gamma']
 
     def print(self, filename):
         assert isinstance(filename, str)
