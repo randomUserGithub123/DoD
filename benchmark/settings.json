@@ -7,7 +7,7 @@
     "repo": {
         "name": "Rashnu-fair-DAG",
         "url": "https://HeenaNagda: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@github.com/HeenaNagda/Rashnu-fair-DAG.git",
-        "branch": "heena/1"
+        "branch": "heena/use-private-ips"
     },
     "instances": {
         "type": "m5d.8xlarge",
