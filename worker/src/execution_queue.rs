@@ -58,7 +58,8 @@ impl ExecutionQueue {
                     _ => panic!("PrimaryWorkerMessage::Execute : Unexpected batch"),
                 }
             }
-            Ok(None) => error!("Could not find a digest in the store while adding to the execution queue"),
+            // Ok(None) => error!("Could not find a digest in the store while adding to the execution queue"),
+            Ok(None) => {},
             Err(e) => error!("error while adding a digest to the execution queue = {}", e),
         }        
     }
@@ -193,8 +194,8 @@ impl ParallelExecution {
 
     pub async fn execute(&mut self){
         // find incoming edge count for each node in the graph
-        info!("ParallelExecution:execute");
-        info!("ParallelExecution:execute :: #nodes in graph = {:?}", self.global_order_graph.node_count());
+        // info!("ParallelExecution:execute");
+        // info!("ParallelExecution:execute :: #nodes in graph = {:?}", self.global_order_graph.node_count());
         let total_nodes = self.global_order_graph.node_count();
         let mut scheduled_count = 0;
 
@@ -244,7 +245,7 @@ impl ParallelExecution {
             }
         }
 
-       info!("All transactions have completed, scheduled_count = {:?}, completed_count = {:?}, total_nodes = {:?}", scheduled_count, completed_count, total_nodes);
+    //    info!("All transactions have completed, scheduled_count = {:?}, completed_count = {:?}, total_nodes = {:?}", scheduled_count, completed_count, total_nodes);
         
         // TEST: START
         // for tx_uid in self.global_order_graph.nodes(){

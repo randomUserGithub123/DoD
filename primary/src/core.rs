@@ -142,7 +142,7 @@ impl Core {
 
     #[async_recursion]
     async fn process_header(&mut self, header: &Header) -> DagResult<()> {
-        debug!("Processing header {:?}", header);
+        // debug!("Processing header {:?}", header);
         // Indicate that we are processing this header.
         self.processing
             .entry(header.round)

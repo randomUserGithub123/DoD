@@ -263,7 +263,7 @@ impl GlobalOrderMaker {
 
                     // NOTE: This log entry is used to compute performance.
                     info!("Batch {:?} contains {} B", digest, global_order_len*512);
-                    info!("Batch: {:?} maps to {:?}", digest, debug_batch_digest);
+                    // info!("Batch: {:?} maps to {:?}", digest, debug_batch_digest);
                 }
 
                 // Broadcast the batch through the network.

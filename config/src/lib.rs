@@ -177,7 +177,7 @@ impl Committee {
         // 2 * total_votes / 3 + 1
         let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
         let thresh = (((5 * total_votes) as f64 - (2 as f64 * self.gamma * total_votes as f64) + (2 as f64 * self.gamma) - 1.0) / 4 as f64) as u32;
-        info!("committee::quorum_threshold : total_votes = {:?}, thresh = {:?}", total_votes as f32, thresh as f32);
+        // info!("committee::quorum_threshold : total_votes = {:?}, thresh = {:?}", total_votes as f32, thresh as f32);
         thresh
     }
 
