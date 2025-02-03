@@ -39,9 +39,6 @@ class FairnessLogParser:
             = zip(*results)
         self.misses = sum(misses)
 
-        print(len(self.sent_samples[0]))
-        # print(self.sent_samples[random.randint(0, len(self.sent_samples)-1)])
-
         # Parse the primaries logs.
         try:
             with Pool() as p:
@@ -225,6 +222,16 @@ class FairnessLogParser:
             duration += [curr_duration]
         return txs/mean(duration), bytes/mean(duration), mean(duration)
 
+    def _end_to_end_client_sending_rate(self):
+        txs = 0
+        max_end_time = 0
+        for client_txs in self.sent_samples:
+            txs += len(client_txs)
+            max_end_time = max(max_end_time, max(client_txs.values()))
+        duration = max_end_time-min(self.start)
+        return txs/duration
+
+
     def _end_to_end_latency(self):
         latency = []
         count = 0
@@ -244,6 +251,7 @@ class FairnessLogParser:
         sync_retry_nodes = self.configs[0]['sync_retry_nodes']
         batch_size = self.configs[0]['batch_size']
         max_batch_delay = self.configs[0]['max_batch_delay']
+        client_sending_rate = self._end_to_end_client_sending_rate()
 
         end_to_end_tps, end_to_end_bps, duration = self._end_to_end_throughput()
         end_to_end_latency = self._end_to_end_latency() * 1_000
@@ -274,6 +282,7 @@ class FairnessLogParser:
             f' End-to-end TPS: {round(end_to_end_tps):,} tx/s\n'
             f' End-to-end BPS: {round(end_to_end_bps):,} B/s\n'
             f' End-to-end latency: {round(end_to_end_latency):,} ms\n'
+            f' Client sending rate: {round(client_sending_rate):,} tx/s\n'
             '-----------------------------------------\n'
         )
 
