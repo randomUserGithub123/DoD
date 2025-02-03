@@ -10,7 +10,7 @@ class Manifest:
 
         self.hosts = []
         for (username, hostname, private_ip, public_ip) in nodes_info:
-            self.hosts.append(public_ip)
+            self.hosts.append(private_ip)
         
     @classmethod
     def load(cls, filename):
