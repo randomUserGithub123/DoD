@@ -81,6 +81,8 @@ pub struct Parameters {
     pub max_batch_delay: u64,
     /// Fairness factor for the fraction of nodes that have to agree with the order
     pub gamma: f64,
+    /// Execution threadpoool size
+    pub execution_threadpool_size: u32,
 }
 
 impl Default for Parameters {
@@ -93,7 +95,8 @@ impl Default for Parameters {
             sync_retry_nodes: 3,
             batch_size: 500_000,
             max_batch_delay: 100,
-            gamma: 0.3,
+            gamma: 1.0,
+            execution_threadpool_size: 4,
         }
     }
 }
@@ -110,6 +113,7 @@ impl Parameters {
         info!("Batch size set to {} B", self.batch_size);
         info!("Max batch delay set to {} ms", self.max_batch_delay);
         info!("Gamma set to {}", self.gamma);
+        info!("execution threadpool size set to {} threads", self.execution_threadpool_size);
     }
 }
 

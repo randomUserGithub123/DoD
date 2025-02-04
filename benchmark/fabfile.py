@@ -23,7 +23,7 @@ def local(ctx, debug=True):
         'n_users': 100,
         'shards': [[0,25],[26,50],[51,75],[76,99]],
         'skew_factor': 0.01,
-        'prob_choose_mtx': 1.0,
+        'prob_choose_mtx': 0.0,
         'duration': 20,
     }
     node_params = {
@@ -35,6 +35,7 @@ def local(ctx, debug=True):
         'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
         'gamma': 1.0,
+        'execution_threadpool_size': 20,
     }
     try:
         ret = LocalBench(bench_params, node_params).run(debug)
@@ -125,6 +126,7 @@ def remote(ctx, debug=False):
         'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
         'gamma': 1.0,
+        'execution_threadpool_size': 4,
     }
     try:
         # Bench(ctx).run(bench_params, node_params, debug)

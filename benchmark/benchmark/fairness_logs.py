@@ -172,6 +172,12 @@ class FairnessLogParser:
             'max_batch_delay': int(
                 search(r'Max batch delay .* (\d+)', log).group(1)
             ),
+            # 'gamma': float(
+            #     search(r'gamma .* (\d+)', log).group(1)
+            # ),
+            # 'execution_threadpool_size': int(
+            #     search(r'execution threadpool size .* (\d+)', log).group(1)
+            # ),
         }
 
         ip = search(r'booted on (\d+.\d+.\d+.\d+)', log).group(1)
@@ -244,6 +250,8 @@ class FairnessLogParser:
         sync_retry_nodes = self.configs[0]['sync_retry_nodes']
         batch_size = self.configs[0]['batch_size']
         max_batch_delay = self.configs[0]['max_batch_delay']
+        # gamma = self.configs[0]['gamma']
+        # execution_threadpool_size = self.configs[0]['execution_threadpool_size']
 
         end_to_end_tps, end_to_end_bps, duration = self._end_to_end_throughput()
         end_to_end_latency = self._end_to_end_latency() * 1_000
@@ -269,6 +277,8 @@ class FairnessLogParser:
             f' Sync retry nodes: {sync_retry_nodes:,} node(s)\n'
             f' batch size: {batch_size:,} B\n'
             f' Max batch delay: {max_batch_delay:,} ms\n'
+            # f' execution threadpool size: {execution_threadpool_size:,} threads\n'
+            # f' gamma: {gamma:,} \n'
             '\n'
             ' + RESULTS:\n'
             f' End-to-end TPS: {round(end_to_end_tps):,} tx/s\n'
