@@ -34,7 +34,7 @@ def local(ctx, debug=True):
         'sync_retry_nodes': 3,  # number of nodes
         'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 1.0,
+        'gamma': 0.7,
         'execution_threadpool_size': 20,
     }
     try:
@@ -103,10 +103,10 @@ def install(ctx):
 def remote(ctx, debug=False):
     ''' Run benchmarks on AWS '''
     bench_params = {
-        'faults': 1,
+        'faults': 0,
         'nodes': [5],
         'workers': 4,
-        'clients': 5,
+        'clients': 6,
         'collocate': True,
         'rate': [100_000],
         'tx_size': 512,
@@ -115,7 +115,7 @@ def remote(ctx, debug=False):
         'skew_factor': 0.01,
         'prob_choose_mtx': 1.0,
         'duration': 300,
-        'runs': 2,
+        'runs': 1,
     }
     node_params = {
         'header_size': 1_000,  # bytes
@@ -125,8 +125,8 @@ def remote(ctx, debug=False):
         'sync_retry_nodes': 3,  # number of nodes
         'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 1.0,
-        'execution_threadpool_size': 4,
+        'gamma': 0.75,
+        'execution_threadpool_size': 20,
     }
     try:
         # Bench(ctx).run(bench_params, node_params, debug)

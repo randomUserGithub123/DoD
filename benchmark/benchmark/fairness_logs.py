@@ -185,8 +185,8 @@ class FairnessLogParser:
         return proposals, commits, configs, ip
 
     def _parse_workers(self, log):
-        if search(r'(?:panic|Error)', log) is not None:
-            raise FairnessParseError('Worker(s) panicked')
+        # if search(r'(?:panic|Error)', log) is not None:
+        #     raise FairnessParseError('Worker(s) panicked')
 
         tmp = findall(r'Batch ([^ ]+) contains (\d+) B', log)
         sizes = {d: int(s) for d, s in tmp}

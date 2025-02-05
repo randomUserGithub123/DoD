@@ -91,7 +91,7 @@ impl ThreadWorker {
                         let _ = tx_done_clone.send(tx_uid);
                     }
                     None => {
-                        info!("ThreadWorker {id} shutting down.");
+                        // info!("ThreadWorker {id} shutting down.");
                         break; // Graceful shutdown when channel closes
                     }
                 }
