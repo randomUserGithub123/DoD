@@ -159,6 +159,7 @@ impl GlobalDependencyGraph{
 
         // (4) Find edges to add into the graph
         // (5) Find missing edges in this graph
+        info!("GlobalDependencyGraph::new : fixed_tx_threshold = {:?}, pending_tx_threshold = {:?}", fixed_tx_threshold as f32, pending_tx_threshold as f32);
         let mut missed_edges: HashMap<(Node, Node), u16> = HashMap::new();
         for (&(from, to), &count) in &edge_counts{
             let fwd_edge_count = count as f32;
@@ -166,6 +167,8 @@ impl GlobalDependencyGraph{
             let min_thr = fixed_tx_threshold.min(pending_tx_threshold);
             
             if fwd_edge_count<min_thr && rev_edge_count<min_thr{
+                info!("missed fwd_edge_count = {:?}, fwd_edge_count = {:?}", fwd_edge_count, rev_edge_count);
+
                 missed_edges.insert((from,to), fwd_edge_count as u16);
                 missed_edges.insert((to, from), rev_edge_count as u16);
             }
