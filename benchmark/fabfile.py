@@ -103,7 +103,7 @@ def install(ctx):
 def remote(ctx, debug=False):
     ''' Run benchmarks on AWS '''
     bench_params = {
-        'faults': 0,
+        'faults': 1,
         'nodes': [5],
         'workers': 4,
         'clients': 6,
@@ -113,7 +113,7 @@ def remote(ctx, debug=False):
         'n_users': 100,
         'shards': [[0,25],[26,50],[51,75],[76,99]],
         'skew_factor': 0.01,
-        'prob_choose_mtx': 1.0,
+        'prob_choose_mtx': 0.0,
         'duration': 300,
         'runs': 1,
     }
@@ -125,7 +125,7 @@ def remote(ctx, debug=False):
         'sync_retry_nodes': 3,  # number of nodes
         'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 0.75,
+        'gamma': 1.0,
         'execution_threadpool_size': 20,
     }
     try:
