@@ -161,14 +161,26 @@ impl GlobalDependencyGraph{
         // (5) Find missing edges in this graph
         let mut missed_edges: HashMap<(Node, Node), u16> = HashMap::new();
         for (&(from, to), &count) in &edge_counts{
-            if ((count as f32) >= fixed_tx_threshold || (count as f32) >= pending_tx_threshold) && count > edge_counts[&(to, from)]{
+            let fwd_edge_count = count as f32;
+            let rev_edge_count = edge_counts[&(to, from)] as f32;
+            let min_thr = fixed_tx_threshold.min(pending_tx_threshold);
+            
+            if fwd_edge_count<min_thr && rev_edge_count<min_thr{
+                missed_edges.insert((from,to), fwd_edge_count as u16);
+                missed_edges.insert((to, from), rev_edge_count as u16);
+            }
+            else{
                 dag.add_edge(from, to, 1);
             }
-            else if !((edge_counts[&(to, from)] as f32) >= fixed_tx_threshold || (edge_counts[&(to, from)] as f32) >= pending_tx_threshold){
-                // edge between 'from' and 'to' is missing
-                missed_edges.insert((from,to), count);
-                missed_edges.insert((to, from), edge_counts[&(to, from)]);
-            }
+
+            // if ((count as f32) >= fixed_tx_threshold || (count as f32) >= pending_tx_threshold) && count > edge_counts[&(to, from)]{
+            //     dag.add_edge(from, to, 1);
+            // }
+            // else if !((edge_counts[&(to, from)] as f32) >= fixed_tx_threshold || (edge_counts[&(to, from)] as f32) >= pending_tx_threshold){
+            //     // edge between 'from' and 'to' is missing
+            //     missed_edges.insert((from,to), count);
+            //     missed_edges.insert((to, from), edge_counts[&(to, from)]);
+            // }
         }
 
         GlobalDependencyGraph{

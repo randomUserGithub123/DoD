@@ -222,18 +222,19 @@ impl GlobalOrderMaker {
 
                 // info!("global_order_maker::run : digest = {:?}, num of nodes = {:?}", debug_batch_digest, global_order_graph_obj.get_dag().node_count());
                 
-                // for ((from, to), count) in &missed_edges{
-                //     {
-                //         let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
-                //         missed_edge_manager_lock.add_missing_edge(*from, *to).await;
-                //         missed_edge_manager_lock.add_updated_edge(*from, *to, *count).await;
-                //     }
+                for ((from, to), count) in &missed_edges{
+                    {
+                        let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
+                        missed_edge_manager_lock.add_missing_edge(*from, *to).await;
+                        missed_edge_manager_lock.add_updated_edge(*from, *to, *count).await;
+                    }
 
-                //     if !missed_pairs.contains(&(*to, *from)){
-                //         missed_pairs.insert((*from, *to));
-                //     }
-                // }
+                    if !missed_pairs.contains(&(*to, *from)){
+                        missed_pairs.insert((*from, *to));
+                    }
+                }
 
+                info!("missed_pairs count = {:?}", missed_pairs.len());
                 // info!("global_order_maker::run : global_order_graph size = {:?}", global_order_graph.len());
                 let global_order_len = global_order_graph.len();
                 let message = WorkerMessage::GlobalOrderInfo(global_order_graph, missed_pairs.clone());
