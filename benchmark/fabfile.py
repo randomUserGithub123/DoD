@@ -17,7 +17,7 @@ def local(ctx, debug=True):
         'faults': 1,
         'nodes': 5,
         'workers': 4,
-        'clients': 5,
+        'clients': 6,
         'rate': 100_000,
         'tx_size': 512,
         'n_users': 100,
@@ -34,7 +34,7 @@ def local(ctx, debug=True):
         'sync_retry_nodes': 3,  # number of nodes
         'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 0.7,
+        'gamma': 1.0,
         'execution_threadpool_size': 20,
     }
     try:
@@ -126,7 +126,7 @@ def remote(ctx, debug=False):
         'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
         'gamma': 0.75,
-        'execution_threadpool_size': 20,
+        'execution_threadpool_size': 4,
     }
     try:
         # Bench(ctx).run(bench_params, node_params, debug)
