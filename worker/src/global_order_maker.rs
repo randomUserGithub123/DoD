@@ -161,6 +161,7 @@ impl GlobalOrderMaker {
                             if !local_order_dags.sent{
                                 // let dag = LocalOrderGraph::get_dag_deserialized(batch);
                                 // self.update_missed_edges(dag.clone()).await;
+                                // local_order_dags.local_order_dags.push(dag);
                                 // info!("global_order_maker::run : adding local order dag to local_order_dags, new length = {:?}", local_order_dags.local_order_dags.len() + 1);
                                 local_order_dags.local_order_dags.push(LocalOrderGraph::get_dag_deserialized(batch));
                             }
@@ -222,19 +223,26 @@ impl GlobalOrderMaker {
 
                 // info!("global_order_maker::run : digest = {:?}, num of nodes = {:?}", debug_batch_digest, global_order_graph_obj.get_dag().node_count());
                 
-                // for ((from, to), count) in &missed_edges{
-                //     {
-                //         let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
-                //         missed_edge_manager_lock.add_missing_edge(*from, *to).await;
-                //         missed_edge_manager_lock.add_updated_edge(*from, *to, *count).await;
-                //     }
 
-                //     if !missed_pairs.contains(&(*to, *from)){
-                //         missed_pairs.insert((*from, *to));
-                //     }
-                // }
+                let dags_to_process = local_order_dags.local_order_dags.clone();
+                drop(local_order_dags);
+                for local_order_dag in dags_to_process {
+                    self.update_missed_edges(local_order_dag.clone()).await;
+                }
+                
+                for ((from, to), count) in &missed_edges{
+                    {
+                        let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
+                        missed_edge_manager_lock.add_missing_edge(*from, *to).await;
+                        missed_edge_manager_lock.add_updated_edge(*from, *to, *count).await;
+                    }
 
-                info!("missed_pairs count = {:?}", missed_pairs.len());
+                    if !missed_pairs.contains(&(*to, *from)){
+                        missed_pairs.insert((*from, *to));
+                    }
+                }
+
+                // info!("missed_pairs count = {:?}", missed_pairs.len());
                 // info!("global_order_maker::run : global_order_graph size = {:?}", global_order_graph.len());
                 let global_order_len = global_order_graph.len();
                 let message = WorkerMessage::GlobalOrderInfo(global_order_graph, missed_pairs.clone());
@@ -305,11 +313,15 @@ impl GlobalOrderMaker {
 
     /// Update the edges those were missed in previous global order, and now found in new set of transactions
     async fn update_missed_edges(&mut self, dag: DiGraphMap<Node, u8>){
-        for (from, to, _weight) in dag.all_edges(){
+        // for (from, to, _weight) in dag.all_edges(){
+        //     let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
+        //     if missed_edge_manager_lock.is_missing_edge(from, to).await {
+        //         missed_edge_manager_lock.add_updated_edge(from, to, 1).await;
+        //     }
+        // }
+        for node in dag.nodes(){
             let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
-            if missed_edge_manager_lock.is_missing_edge(from, to).await {
-                missed_edge_manager_lock.add_updated_edge(from, to, 1).await;
-            }
+            missed_edge_manager_lock.process_node(node).await;
         }
     }
 }

@@ -173,10 +173,19 @@ impl GlobalDependencyGraph{
             //     dag.add_edge(from, to, 1);
             // }
 
+            // if ((count as f32) >= fixed_tx_threshold || (count as f32) >= pending_tx_threshold) && count > edge_counts[&(to, from)]{
+            //     dag.add_edge(from, to, 1);
+            // }
+            // else if !((edge_counts[&(to, from)] as f32) >= fixed_tx_threshold || (edge_counts[&(to, from)] as f32) >= pending_tx_threshold){
+            //     // edge between 'from' and 'to' is missing
+            //     missed_edges.insert((from,to), count);
+            //     missed_edges.insert((to, from), edge_counts[&(to, from)]);
+            // }
+
             if ((count as f32) >= fixed_tx_threshold || (count as f32) >= pending_tx_threshold) && count > edge_counts[&(to, from)]{
                 dag.add_edge(from, to, 1);
             }
-            else if !((edge_counts[&(to, from)] as f32) >= fixed_tx_threshold || (edge_counts[&(to, from)] as f32) >= pending_tx_threshold){
+            else if dag.contains_node(from) && dag.contains_node(to) && (count as f32) < 1.0 && (count as f32) > 0.0{
                 // edge between 'from' and 'to' is missing
                 missed_edges.insert((from,to), count);
                 missed_edges.insert((to, from), edge_counts[&(to, from)]);

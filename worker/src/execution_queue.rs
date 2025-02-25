@@ -85,18 +85,13 @@ impl ExecutionQueue {
             let mut updated_pairs: Vec<(Node, Node)> = Vec::new();
             let mut updated_edges: Vec<(Node, Node)> = Vec::new();
             for missed_pair in &element.missed_pairs{
-                // info!("missed pair = {:?}", missed_pair);
+                // info!("ExecutionQueue::execute missed pair = {:?}", missed_pair);
                 let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
-                if missed_edge_manager_lock.is_missing_edge_updated(missed_pair.0, missed_pair.1).await{
-                    // info!("missed edge found");
+                if let Some(edge) = missed_edge_manager_lock.is_missing_edge_updated(missed_pair.0, missed_pair.1).await {
+                    drop(missed_edge_manager_lock);
                     updated_pairs.push((missed_pair.0, missed_pair.1));
-                    updated_edges.push((missed_pair.0, missed_pair.1));
-                }
-                else if missed_edge_manager_lock.is_missing_edge_updated(missed_pair.1, missed_pair.0).await{
-                    // info!("missed edge found");
-                    updated_pairs.push((missed_pair.0, missed_pair.1));
-                    updated_edges.push((missed_pair.1, missed_pair.0));
-                }
+                    updated_edges.push((edge.0, edge.1));
+                } 
             }
 
             // remove from missed pairs set
@@ -122,7 +117,7 @@ impl ExecutionQueue {
                 break;
             }
         }
-
+        
         // info!("n_elements_to_execute = {:?}", n_elements_to_execute);
 
         // remove queue elements and Execute global order if no more missed edges

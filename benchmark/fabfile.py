@@ -23,7 +23,7 @@ def local(ctx, debug=True):
         'n_users': 100,
         'shards': [[0,25],[26,50],[51,75],[76,99]],
         'skew_factor': 0.01,
-        'prob_choose_mtx': 0.0,
+        'prob_choose_mtx': 1.0,
         'duration': 20,
     }
     node_params = {

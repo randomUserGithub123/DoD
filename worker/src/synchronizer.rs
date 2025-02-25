@@ -188,7 +188,6 @@ impl Synchronizer {
                     PrimaryWorkerMessage::Execute(certificate) => {
                         // info!("PrimaryWorkerMessage::Execute START");
                         for digest in certificate.header.payload.keys() {
-                            // info!("send digest = {:?} for execution", *digest);
                             self.exe_queue.execute(*digest).await;
                         }
                     },

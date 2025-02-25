@@ -270,7 +270,6 @@ impl MessageHandler for WorkerReceiverHandler {
         match bincode::deserialize(&serialized).map_err(DagError::SerializationError)? {
             WorkerPrimaryMessage::OurBatch(digest, worker_id) => 
             {
-                // info!("Primary received global order");
                 self
                 .tx_our_digests
                 .send((digest, worker_id))

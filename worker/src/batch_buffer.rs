@@ -185,17 +185,17 @@ impl BatchBuffer {
         let digest = Digest(Sha512::digest(&serialized).as_slice()[..32].try_into().unwrap()); // compute digest
         // info!("batch_buffer::run: local_order_len = {:?}, digest = {:?}", local_order_len, digest);
 
-        #[cfg(feature = "benchmark")]
-        {
-            // NOTE: This is one extra hash that is only needed to print the following log entries.
-            let digest = Digest(
-                Sha512::digest(&serialized).as_slice()[..32]
-                    .try_into()
-                    .unwrap(),
-            );
-            // NOTE: This log entry is used to compute performance.
-            info!("Batch {:?} ------ {} B", digest, local_order_len);
-        }
+        // #[cfg(feature = "benchmark")]
+        // {
+        //     // NOTE: This is one extra hash that is only needed to print the following log entries.
+        //     let digest = Digest(
+        //         Sha512::digest(&serialized).as_slice()[..32]
+        //             .try_into()
+        //             .unwrap(),
+        //     );
+        //     // NOTE: This log entry is used to compute performance.
+        //     info!("Batch {:?} ------ {} B", digest, local_order_len);
+        // }
 
         let (names, addresses): (Vec<_>, _) = self.workers_addresses.iter().cloned().unzip();
         let bytes = Bytes::from(serialized.clone());

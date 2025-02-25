@@ -127,7 +127,7 @@ impl Core {
             .iter()
             .map(|(_, x)| x.primary_to_primary)
             .collect();
-        // info!("Broadcast own header = {:?} to {:?}", header, addresses);
+        // info!("Broadcast own header = {:?} to {:?}", header, addresses); 
         let bytes = bincode::serialize(&PrimaryMessage::Header(header.clone()))
             .expect("Failed to serialize our own header");
         let handlers = self.network.broadcast(addresses, Bytes::from(bytes)).await;

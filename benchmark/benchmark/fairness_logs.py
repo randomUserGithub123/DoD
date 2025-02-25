@@ -242,6 +242,15 @@ class FairnessLogParser:
         print(count, " tx_ids not found in sent")
         return mean(latency) if latency else 0
 
+    def _end_to_end_client_sending_rate(self):
+        txs = 0
+        max_end_time = 0
+        for client_txs in self.sent_samples:
+            txs += len(client_txs)
+            max_end_time = max(max_end_time, max(client_txs.values()))
+        duration = max_end_time-min(self.start)
+        return txs/duration
+
     def result(self):
         header_size = self.configs[0]['header_size']
         max_header_delay = self.configs[0]['max_header_delay']
@@ -255,6 +264,8 @@ class FairnessLogParser:
 
         end_to_end_tps, end_to_end_bps, duration = self._end_to_end_throughput()
         end_to_end_latency = self._end_to_end_latency() * 1_000
+        client_sending_rate = self._end_to_end_client_sending_rate()
+
 
         return (
             '\n'
@@ -284,6 +295,7 @@ class FairnessLogParser:
             f' End-to-end TPS: {round(end_to_end_tps):,} tx/s\n'
             f' End-to-end BPS: {round(end_to_end_bps):,} B/s\n'
             f' End-to-end latency: {round(end_to_end_latency):,} ms\n'
+            f' Client Sending Rate: {round(client_sending_rate):,} tx/s\n'
             '-----------------------------------------\n'
         )
 

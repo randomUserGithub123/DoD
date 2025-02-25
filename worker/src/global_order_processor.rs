@@ -87,6 +87,7 @@ impl GlobalOrderProcessor {
 
                 // Store the batch.
                 store.write(digest.to_vec(), global_order).await;
+                // info!("Writing to store = {:?}", digest);
 
                 // Deliver the batch's digest.
                 let message = match own_digest {
