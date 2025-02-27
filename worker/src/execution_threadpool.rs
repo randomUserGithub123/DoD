@@ -56,11 +56,9 @@ impl ThreadWorker {
                                     sb_handler_clone.execute_transaction(Bytes::from(tx));
                                     let start = std::time::Instant::now();
                                     let mut num_iters = 0;
-                                    while start.elapsed().as_micros() < 10 {
-                                        num_iters += 1;
-                                    }
+                                    while start.elapsed().as_micros() < 1 {}
                                     let end = std::time::Instant::now();
-                                    info!("num_iters: {}, time: {:?}", num_iters, end - start);
+                                    info!("time: {:?}", end - start);
                                     // tokio::time::sleep(Duration::from_micros(1)).await;
                                     {
                                         let writer = writer_store_lock.get_writer(tx_uid); // Get Arc<Mutex<Writer>>
