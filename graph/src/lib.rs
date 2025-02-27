@@ -114,14 +114,14 @@ pub struct GlobalDependencyGraph{
 
 impl GlobalDependencyGraph{
     pub fn new(local_order_graphs: Vec<DiGraphMap<Node, u8>>, fixed_tx_threshold: f32, pending_tx_threshold: f32) -> Self {
-        // info!("In new global dependency graph fixed_tx_threshold = {:?}, pending_tx_threshold = {:?}", fixed_tx_threshold, pending_tx_threshold);
+        info!("GlobalDependencyGraph::new fixed_tx_threshold = {:?}, pending_tx_threshold = {:?}", fixed_tx_threshold, pending_tx_threshold);
         // info!("Local order graphs:");
         // for (i, graph) in local_order_graphs.iter().enumerate() {
         //     info!("Graph {}: {} nodes, {} edges", i, graph.node_count(), graph.edge_count());
         //     info!("Nodes: {:?}", graph.nodes().collect::<Vec<_>>());
         //     info!("Edges: {:?}", graph.all_edges().collect::<Vec<_>>());
         // }
-        
+        let edge_threshold = f32::min(fixed_tx_threshold, pending_tx_threshold) -1.0;
         // (1) Create an empty graph G=(V,E)
         let mut dag: DiGraphMap<Node, u8> = DiGraphMap::new();
 
@@ -152,7 +152,7 @@ impl GlobalDependencyGraph{
             if count as f32 >= fixed_tx_threshold || count as f32 >= pending_tx_threshold{
                 dag.add_node(tx);
             }
-            if count as f32 >= pending_tx_threshold{
+            if count as f32 >= fixed_tx_threshold{
                 fixed_transactions.insert(tx);
             }
         }
@@ -185,7 +185,7 @@ impl GlobalDependencyGraph{
             if ((count as f32) >= fixed_tx_threshold || (count as f32) >= pending_tx_threshold) && count > edge_counts[&(to, from)]{
                 dag.add_edge(from, to, 1);
             }
-            else if dag.contains_node(from) && dag.contains_node(to) && (count as f32) < 1.0 && (count as f32) > 0.0{
+            else if dag.contains_node(from) && dag.contains_node(to) && (count as f32) < edge_threshold && (count as f32) > 0.0{
                 // edge between 'from' and 'to' is missing
                 missed_edges.insert((from,to), count);
                 missed_edges.insert((to, from), edge_counts[&(to, from)]);

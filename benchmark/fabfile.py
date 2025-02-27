@@ -34,7 +34,7 @@ def local(ctx, debug=True):
         'sync_retry_nodes': 3,  # number of nodes
         'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 1.0,
+        'gamma': 0.9,
         'execution_threadpool_size': 20,
     }
     try:

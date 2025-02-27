@@ -187,14 +187,22 @@ impl Committee {
 
     /// Returns the stake required for a transaction to be labelled as fixed (N - 2f)
     pub fn fixed_tx_threshold(&self) -> Stake {
-        let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
-        (((3 * total_votes) as f64 - (2 as f64 * self.gamma * total_votes as f64) + (2 as f64 * self.gamma) - 1.0) / 2 as f64) as u32
+        // let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
+        // (((3 * total_votes) as f64 - (2 as f64 * self.gamma * total_votes as f64) + (2 as f64 * self.gamma) - 1.0) / 2 as f64) as u32
+        let n: Stake = self.authorities.values().map(|x| x.stake).sum();
+        let f = ((n as f64) - 1.0)/4.0;
+        let thr = (n as f64) - 2.0*f;
+        return thr as u32;
     }
 
     /// Returns the stake threshold for a transaction to be labelled as pending
     pub fn pending_tx_threshold(&self, gamma: f64) -> Stake {
-        let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
-        (total_votes as f64 * (1 as f64 - gamma)) as u32 + self.validity_threshold()
+        // let total_votes: Stake = self.authorities.values().map(|x| x.stake).sum();
+        // (total_votes as f64 * (1 as f64 - gamma)) as u32 + self.validity_threshold()
+        let n: Stake = self.authorities.values().map(|x| x.stake).sum();
+        let f = ((n as f64) - 1.0)/4.0;
+        let thr = (n as f64) * (1.0-gamma) + f + 1.0;
+        return thr as u32;
     }
 
     /// Returns the stake required to reach availability (f+1).
