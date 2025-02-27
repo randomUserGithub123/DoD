@@ -56,7 +56,7 @@ impl ThreadWorker {
                                     sb_handler_clone.execute_transaction(Bytes::from(tx));
                                     let start = std::time::Instant::now();
                                     let mut num_iters = 0;
-                                    while start.elapsed().as_micros() < 1 {}
+                                    while start.elapsed().as_micros() < 10 {}
                                     let end = std::time::Instant::now();
                                     info!("time: {:?}", end - start);
                                     // tokio::time::sleep(Duration::from_micros(1)).await;
