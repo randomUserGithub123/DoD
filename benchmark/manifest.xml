@@ -1,106 +1,1372 @@
 <rspec xmlns="http://www.geni.net/resources/rspec/3" xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" xmlns:tour="http://www.protogeni.net/resources/rspec/ext/apt-tour/1" xmlns:jacks="http://www.protogeni.net/resources/rspec/ext/jacks/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.geni.net/resources/rspec/3    http://www.geni.net/resources/rspec/3/request.xsd" type="request">
-  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node0" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc721" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605449">
-    <sliver_type name="raw-pc"/>
-    <hardware_type name="d430"/>
-    <interface client_id="node0:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc721:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605453" mac_address="a0369f85c20f">
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node0" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc246" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620326">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node0:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc246:eth3" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620354" mac_address="000423b71a0f">
       <ip address="10.10.1.1" type="ipv4" netmask="255.255.255.0"/>
     </interface>
-    <emulab:vnode name="pc721" hardware_type="d430"/>
-    <host name="node0.dod-4.OrderFairness.emulab.net" ipv4="155.98.36.21"/>
+    <emulab:vnode name="pc246" hardware_type="pc3000"/>
+    <host name="node0.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.46"/>
     <services>
-      <login authentication="ssh-keys" hostname="pc721.emulab.net" port="22" username="heenan"/>
-      <login authentication="ssh-keys" hostname="pc721.emulab.net" port="22" username="shubh"/>
-      <login authentication="ssh-keys" hostname="pc721.emulab.net" port="22" username="sakshisn"/>
-      <login authentication="ssh-keys" hostname="pc721.emulab.net" port="22" username="keonatta"/>
-      <emulab:console server="boss.emulab.net"/>
+      <login authentication="ssh-keys" hostname="pc246.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc246.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc246.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc246.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
       <emulab:recovery available="true"/>
       <emulab:powercycle available="true"/>
       <emulab:imageable available="true"/>
     </services>
   </node>
-  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node1" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc737" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605447">
-    <sliver_type name="raw-pc"/>
-    <hardware_type name="d430"/>
-    <interface client_id="node1:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc737:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605454" mac_address="a0369f857f6f">
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node1" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc304" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620299">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node1:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc304:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620355" mac_address="000423b72132">
       <ip address="10.10.1.2" type="ipv4" netmask="255.255.255.0"/>
     </interface>
-    <emulab:vnode name="pc737" hardware_type="d430"/>
-    <host name="node1.dod-4.OrderFairness.emulab.net" ipv4="155.98.36.37"/>
+    <emulab:vnode name="pc304" hardware_type="pc3000"/>
+    <host name="node1.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.104"/>
     <services>
-      <login authentication="ssh-keys" hostname="pc737.emulab.net" port="22" username="heenan"/>
-      <login authentication="ssh-keys" hostname="pc737.emulab.net" port="22" username="shubh"/>
-      <login authentication="ssh-keys" hostname="pc737.emulab.net" port="22" username="sakshisn"/>
-      <login authentication="ssh-keys" hostname="pc737.emulab.net" port="22" username="keonatta"/>
-      <emulab:console server="boss.emulab.net"/>
+      <login authentication="ssh-keys" hostname="pc304.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc304.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc304.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc304.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
       <emulab:recovery available="true"/>
       <emulab:powercycle available="true"/>
       <emulab:imageable available="true"/>
     </services>
   </node>
-  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node2" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc732" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605446">
-    <sliver_type name="raw-pc"/>
-    <hardware_type name="d430"/>
-    <interface client_id="node2:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc732:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605455" mac_address="a0369f857f93">
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node2" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc252" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620321">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node2:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc252:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620356" mac_address="000423b7212a">
       <ip address="10.10.1.3" type="ipv4" netmask="255.255.255.0"/>
     </interface>
-    <emulab:vnode name="pc732" hardware_type="d430"/>
-    <host name="node2.dod-4.OrderFairness.emulab.net" ipv4="155.98.36.32"/>
+    <emulab:vnode name="pc252" hardware_type="pc3000"/>
+    <host name="node2.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.52"/>
     <services>
-      <login authentication="ssh-keys" hostname="pc732.emulab.net" port="22" username="heenan"/>
-      <login authentication="ssh-keys" hostname="pc732.emulab.net" port="22" username="shubh"/>
-      <login authentication="ssh-keys" hostname="pc732.emulab.net" port="22" username="sakshisn"/>
-      <login authentication="ssh-keys" hostname="pc732.emulab.net" port="22" username="keonatta"/>
-      <emulab:console server="boss.emulab.net"/>
+      <login authentication="ssh-keys" hostname="pc252.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc252.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc252.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc252.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
       <emulab:recovery available="true"/>
       <emulab:powercycle available="true"/>
       <emulab:imageable available="true"/>
     </services>
   </node>
-  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node3" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc730" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605448">
-    <sliver_type name="raw-pc"/>
-    <hardware_type name="d430"/>
-    <interface client_id="node3:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc730:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605456" mac_address="a0369f85c217">
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node3" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc343" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620327">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node3:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc343:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620357" mac_address="000423b7182c">
       <ip address="10.10.1.4" type="ipv4" netmask="255.255.255.0"/>
     </interface>
-    <emulab:vnode name="pc730" hardware_type="d430"/>
-    <host name="node3.dod-4.OrderFairness.emulab.net" ipv4="155.98.36.30"/>
+    <emulab:vnode name="pc343" hardware_type="pc3000"/>
+    <host name="node3.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.143"/>
     <services>
-      <login authentication="ssh-keys" hostname="pc730.emulab.net" port="22" username="heenan"/>
-      <login authentication="ssh-keys" hostname="pc730.emulab.net" port="22" username="shubh"/>
-      <login authentication="ssh-keys" hostname="pc730.emulab.net" port="22" username="sakshisn"/>
-      <login authentication="ssh-keys" hostname="pc730.emulab.net" port="22" username="keonatta"/>
-      <emulab:console server="boss.emulab.net"/>
+      <login authentication="ssh-keys" hostname="pc343.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc343.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc343.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc343.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
       <emulab:recovery available="true"/>
       <emulab:powercycle available="true"/>
       <emulab:imageable available="true"/>
     </services>
   </node>
-  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node4" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc739" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605450">
-    <sliver_type name="raw-pc"/>
-    <hardware_type name="d430"/>
-    <interface client_id="node4:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc739:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605457" mac_address="a0369f857f13">
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node4" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc268" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620308">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node4:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc268:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620358" mac_address="000423b73d2a">
       <ip address="10.10.1.5" type="ipv4" netmask="255.255.255.0"/>
     </interface>
-    <emulab:vnode name="pc739" hardware_type="d430"/>
-    <host name="node4.dod-4.OrderFairness.emulab.net" ipv4="155.98.36.39"/>
+    <emulab:vnode name="pc268" hardware_type="pc3000"/>
+    <host name="node4.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.68"/>
     <services>
-      <login authentication="ssh-keys" hostname="pc739.emulab.net" port="22" username="heenan"/>
-      <login authentication="ssh-keys" hostname="pc739.emulab.net" port="22" username="shubh"/>
-      <login authentication="ssh-keys" hostname="pc739.emulab.net" port="22" username="sakshisn"/>
-      <login authentication="ssh-keys" hostname="pc739.emulab.net" port="22" username="keonatta"/>
+      <login authentication="ssh-keys" hostname="pc268.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc268.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc268.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc268.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
       <emulab:recovery available="true"/>
       <emulab:powercycle available="true"/>
       <emulab:imageable available="true"/>
     </services>
   </node>
-  <link client_id="link-1" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605452" vlantag="129">
-    <interface_ref client_id="node0:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc721:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605453"/>
-    <interface_ref client_id="node1:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc737:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605454"/>
-    <interface_ref client_id="node2:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc732:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605455"/>
-    <interface_ref client_id="node3:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc730:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605456"/>
-    <interface_ref client_id="node4:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc739:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1605457"/>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node5" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc274" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620333">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node5:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc274:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620359" mac_address="000423b71970">
+      <ip address="10.10.1.6" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc274" hardware_type="pc3000"/>
+    <host name="node5.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.74"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc274.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc274.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc274.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc274.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node6" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc264" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620337">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node6:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc264:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620360" mac_address="000423b712ae">
+      <ip address="10.10.1.7" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc264" hardware_type="pc3000"/>
+    <host name="node6.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.64"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc264.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc264.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc264.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc264.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node7" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc255" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620301">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node7:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc255:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620361" mac_address="000423b7421f">
+      <ip address="10.10.1.8" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc255" hardware_type="pc3000"/>
+    <host name="node7.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.55"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc255.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc255.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc255.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc255.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node8" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc344" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620324">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node8:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc344:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620362" mac_address="000423b7425e">
+      <ip address="10.10.1.9" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc344" hardware_type="pc3000"/>
+    <host name="node8.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.144"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc344.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc344.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc344.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc344.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node9" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc324" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620335">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node9:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc324:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620363" mac_address="000423b740ac">
+      <ip address="10.10.1.10" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc324" hardware_type="pc3000"/>
+    <host name="node9.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.124"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc324.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc324.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc324.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc324.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node10" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc319" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620332">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node10:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc319:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620364" mac_address="000423b715fc">
+      <ip address="10.10.1.11" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc319" hardware_type="pc3000"/>
+    <host name="node10.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.119"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc319.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc319.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc319.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc319.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node11" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc352" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620290">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node11:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc352:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620365" mac_address="000423b71800">
+      <ip address="10.10.1.12" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc352" hardware_type="pc3000"/>
+    <host name="node11.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.152"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc352.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc352.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc352.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc352.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node12" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc318" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620302">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node12:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc318:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620366" mac_address="000423b71288">
+      <ip address="10.10.1.13" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc318" hardware_type="pc3000"/>
+    <host name="node12.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.118"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc318.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc318.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc318.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc318.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node13" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc266" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620331">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node13:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc266:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620367" mac_address="000423b712e6">
+      <ip address="10.10.1.14" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc266" hardware_type="pc3000"/>
+    <host name="node13.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.66"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc266.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc266.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc266.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc266.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node14" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc283" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620312">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node14:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc283:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620368" mac_address="000423b71ff8">
+      <ip address="10.10.1.15" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc283" hardware_type="pc3000"/>
+    <host name="node14.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.83"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc283.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc283.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc283.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc283.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node15" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc348" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620294">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node15:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc348:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620369" mac_address="000423b74258">
+      <ip address="10.10.1.16" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc348" hardware_type="pc3000"/>
+    <host name="node15.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.148"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc348.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc348.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc348.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc348.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node16" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc276" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620341">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node16:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc276:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620370" mac_address="000423b7204e">
+      <ip address="10.10.1.17" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc276" hardware_type="pc3000"/>
+    <host name="node16.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.76"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc276.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc276.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc276.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc276.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node17" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc206" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620305">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node17:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc206:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620371" mac_address="000423b71d3a">
+      <ip address="10.10.1.18" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc206" hardware_type="pc3000"/>
+    <host name="node17.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.6"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc206.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc206.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc206.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc206.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node18" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc210" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620318">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node18:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc210:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620372" mac_address="000423b713da">
+      <ip address="10.10.1.19" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc210" hardware_type="pc3000"/>
+    <host name="node18.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.10"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc210.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc210.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc210.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc210.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node19" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc320" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620316">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node19:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc320:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620373" mac_address="000423b712d8">
+      <ip address="10.10.1.20" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc320" hardware_type="pc3000"/>
+    <host name="node19.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.120"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc320.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc320.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc320.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc320.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node20" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc306" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620307">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node20:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc306:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620374" mac_address="000423b7126a">
+      <ip address="10.10.1.21" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc306" hardware_type="pc3000"/>
+    <host name="node20.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.106"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc306.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc306.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc306.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc306.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node21" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc339" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620342">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node21:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc339:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620375" mac_address="000423b74040">
+      <ip address="10.10.1.22" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc339" hardware_type="pc3000"/>
+    <host name="node21.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.139"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc339.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc339.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc339.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc339.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node22" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc253" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620328">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node22:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc253:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620376" mac_address="000423b718fc">
+      <ip address="10.10.1.23" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc253" hardware_type="pc3000"/>
+    <host name="node22.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.53"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc253.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc253.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc253.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc253.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node23" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc309" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620300">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node23:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc309:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620377" mac_address="000423b71ce2">
+      <ip address="10.10.1.24" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc309" hardware_type="pc3000"/>
+    <host name="node23.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.109"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc309.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc309.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc309.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc309.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node24" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc300" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620325">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node24:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc300:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620378" mac_address="000423b71320">
+      <ip address="10.10.1.25" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc300" hardware_type="pc3000"/>
+    <host name="node24.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.100"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc300.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc300.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc300.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc300.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node25" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc212" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620297">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node25:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc212:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620379" mac_address="000423b7406e">
+      <ip address="10.10.1.26" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc212" hardware_type="pc3000"/>
+    <host name="node25.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.12"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc212.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc212.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc212.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc212.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node26" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc336" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620334">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node26:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc336:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620380" mac_address="000423b71ce0">
+      <ip address="10.10.1.27" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc336" hardware_type="pc3000"/>
+    <host name="node26.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.136"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc336.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc336.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc336.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc336.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node27" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc288" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620345">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node27:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc288:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620381" mac_address="000423b71960">
+      <ip address="10.10.1.28" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc288" hardware_type="pc3000"/>
+    <host name="node27.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.88"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc288.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc288.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc288.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc288.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node28" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc349" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620323">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node28:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc349:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620382" mac_address="000423b73e96">
+      <ip address="10.10.1.29" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc349" hardware_type="pc3000"/>
+    <host name="node28.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.149"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc349.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc349.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc349.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc349.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node29" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc244" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620349">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node29:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc244:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620383" mac_address="000423b7269e">
+      <ip address="10.10.1.30" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc244" hardware_type="pc3000"/>
+    <host name="node29.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.44"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc244.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc244.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc244.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc244.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node30" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc208" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620338">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node30:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc208:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620384" mac_address="000423b7210a">
+      <ip address="10.10.1.31" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc208" hardware_type="pc3000"/>
+    <host name="node30.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.8"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc208.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc208.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc208.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc208.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node31" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc296" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620295">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node31:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc296:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620385" mac_address="000423b722a4">
+      <ip address="10.10.1.32" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc296" hardware_type="pc3000"/>
+    <host name="node31.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.96"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc296.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc296.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc296.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc296.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node32" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc223" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620330">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node32:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc223:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620386" mac_address="000423b71332">
+      <ip address="10.10.1.33" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc223" hardware_type="pc3000"/>
+    <host name="node32.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.23"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc223.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc223.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc223.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc223.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node33" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc245" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620306">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node33:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc245:eth3" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620387" mac_address="000423b7160d">
+      <ip address="10.10.1.34" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc245" hardware_type="pc3000"/>
+    <host name="node33.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.45"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc245.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc245.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc245.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc245.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node34" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc340" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620296">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node34:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc340:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620388" mac_address="000423b74224">
+      <ip address="10.10.1.35" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc340" hardware_type="pc3000"/>
+    <host name="node34.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.140"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc340.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc340.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc340.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc340.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node35" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc269" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620339">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node35:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc269:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620389" mac_address="000423b712e0">
+      <ip address="10.10.1.36" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc269" hardware_type="pc3000"/>
+    <host name="node35.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.69"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc269.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc269.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc269.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc269.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node36" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc241" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620322">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node36:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc241:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620390" mac_address="000423b729ca">
+      <ip address="10.10.1.37" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc241" hardware_type="pc3000"/>
+    <host name="node36.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.41"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc241.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc241.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc241.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc241.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node37" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc265" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620319">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node37:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc265:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620391" mac_address="000423b71310">
+      <ip address="10.10.1.38" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc265" hardware_type="pc3000"/>
+    <host name="node37.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.65"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc265.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc265.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc265.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc265.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node38" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc271" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620304">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node38:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc271:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620392" mac_address="000423b740a8">
+      <ip address="10.10.1.39" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc271" hardware_type="pc3000"/>
+    <host name="node38.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.71"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc271.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc271.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc271.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc271.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node39" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc298" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620346">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node39:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc298:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620393" mac_address="000423b71d04">
+      <ip address="10.10.1.40" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc298" hardware_type="pc3000"/>
+    <host name="node39.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.98"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc298.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc298.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc298.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc298.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node40" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc243" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620347">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node40:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc243:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620394" mac_address="000423b71302">
+      <ip address="10.10.1.41" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc243" hardware_type="pc3000"/>
+    <host name="node40.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.43"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc243.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc243.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc243.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc243.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node41" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc315" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620291">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node41:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc315:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620395" mac_address="000423b71af8">
+      <ip address="10.10.1.42" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc315" hardware_type="pc3000"/>
+    <host name="node41.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.115"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc315.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc315.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc315.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc315.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node42" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc323" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620343">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node42:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc323:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620396" mac_address="000423b74076">
+      <ip address="10.10.1.43" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc323" hardware_type="pc3000"/>
+    <host name="node42.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.123"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc323.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc323.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc323.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc323.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node43" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc201" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620340">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node43:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc201:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620397" mac_address="000423b7176c">
+      <ip address="10.10.1.44" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc201" hardware_type="pc3000"/>
+    <host name="node43.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.1"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc201.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc201.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc201.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc201.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node44" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc278" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620298">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node44:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc278:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620398" mac_address="000423b7192e">
+      <ip address="10.10.1.45" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc278" hardware_type="pc3000"/>
+    <host name="node44.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.78"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc278.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc278.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc278.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc278.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node45" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc248" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620314">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node45:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc248:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620399" mac_address="000423b71d44">
+      <ip address="10.10.1.46" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc248" hardware_type="pc3000"/>
+    <host name="node45.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.48"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc248.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc248.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc248.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc248.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node46" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc260" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620317">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node46:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc260:eth3" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620400" mac_address="000423b71275">
+      <ip address="10.10.1.47" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc260" hardware_type="pc3000"/>
+    <host name="node46.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.60"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc260.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc260.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc260.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc260.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node47" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc326" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620329">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node47:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc326:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620401" mac_address="000423b72036">
+      <ip address="10.10.1.48" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc326" hardware_type="pc3000"/>
+    <host name="node47.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.126"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc326.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc326.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc326.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc326.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node48" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc357" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620313">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node48:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc357:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620402" mac_address="000423b729c4">
+      <ip address="10.10.1.49" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc357" hardware_type="pc3000"/>
+    <host name="node48.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.157"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc357.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc357.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc357.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc357.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node49" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc211" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620309">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node49:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc211:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620403" mac_address="000423b73fce">
+      <ip address="10.10.1.50" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc211" hardware_type="pc3000"/>
+    <host name="node49.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.11"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc211.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc211.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc211.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc211.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node50" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc258" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620292">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node50:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc258:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620404" mac_address="000423b71ab2">
+      <ip address="10.10.1.51" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc258" hardware_type="pc3000"/>
+    <host name="node50.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.58"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc258.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc258.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc258.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc258.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node51" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc328" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620310">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node51:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc328:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620405" mac_address="000423b71aa0">
+      <ip address="10.10.1.52" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc328" hardware_type="pc3000"/>
+    <host name="node51.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.128"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc328.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc328.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc328.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc328.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node52" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc207" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620336">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node52:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc207:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620406" mac_address="000423b7424e">
+      <ip address="10.10.1.53" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc207" hardware_type="pc3000"/>
+    <host name="node52.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.7"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc207.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc207.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc207.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc207.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node53" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc256" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620344">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node53:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc256:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620407" mac_address="000423b72924">
+      <ip address="10.10.1.54" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc256" hardware_type="pc3000"/>
+    <host name="node53.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.56"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc256.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc256.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc256.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc256.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node54" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc312" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620311">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node54:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc312:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620408" mac_address="000423b71266">
+      <ip address="10.10.1.55" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc312" hardware_type="pc3000"/>
+    <host name="node54.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.112"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc312.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc312.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc312.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc312.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node55" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc359" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620350">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node55:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc359:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620409" mac_address="000423b717e6">
+      <ip address="10.10.1.56" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc359" hardware_type="pc3000"/>
+    <host name="node55.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.159"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc359.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc359.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc359.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc359.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node56" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc257" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620293">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node56:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc257:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620410" mac_address="000423b71e14">
+      <ip address="10.10.1.57" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc257" hardware_type="pc3000"/>
+    <host name="node56.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.57"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc257.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc257.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc257.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc257.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node57" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc351" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620320">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node57:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc351:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620411" mac_address="000423b71be0">
+      <ip address="10.10.1.58" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc351" hardware_type="pc3000"/>
+    <host name="node57.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.151"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc351.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc351.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc351.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc351.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv4.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node58" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc322" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620303">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node58:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc322:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620412" mac_address="000423a8d9b4">
+      <ip address="10.10.1.59" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc322" hardware_type="pc3000"/>
+    <host name="node58.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.122"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc322.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc322.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc322.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc322.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node59" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc249" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620351">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node59:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc249:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620413" mac_address="000423b71558">
+      <ip address="10.10.1.60" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc249" hardware_type="pc3000"/>
+    <host name="node59.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.49"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc249.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc249.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc249.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc249.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node60" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc281" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620348">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node60:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc281:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620414" mac_address="000423b72074">
+      <ip address="10.10.1.61" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc281" hardware_type="pc3000"/>
+    <host name="node60.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.81"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc281.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc281.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc281.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc281.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <node xmlns:emulab="http://www.protogeni.net/resources/rspec/ext/emulab/1" client_id="node61" exclusive="true" component_manager_id="urn:publicid:IDN+emulab.net+authority+cm" component_id="urn:publicid:IDN+emulab.net+node+pc247" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620315">
+    <sliver_type name="raw-pc">
+      <disk_image name="urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"/>
+    </sliver_type>
+    <hardware_type name="pc3000"/>
+    <interface client_id="node61:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc247:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620415" mac_address="000423b72664">
+      <ip address="10.10.1.62" type="ipv4" netmask="255.255.255.0"/>
+    </interface>
+    <emulab:vnode name="pc247" hardware_type="pc3000"/>
+    <host name="node61.dod-scalability.OrderFairness.emulab.net" ipv4="155.98.39.47"/>
+    <services>
+      <login authentication="ssh-keys" hostname="pc247.emulab.net" port="22" username="heenan"/>
+      <login authentication="ssh-keys" hostname="pc247.emulab.net" port="22" username="shubh"/>
+      <login authentication="ssh-keys" hostname="pc247.emulab.net" port="22" username="sakshisn"/>
+      <login authentication="ssh-keys" hostname="pc247.emulab.net" port="22" username="keonatta"/>
+      <emulab:console server="tipserv3.emulab.net"/>
+      <emulab:recovery available="true"/>
+      <emulab:powercycle available="true"/>
+      <emulab:imageable available="true"/>
+    </services>
+  </node>
+  <link client_id="link-1" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620353" vlantag="194">
+    <interface_ref client_id="node0:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc246:eth3" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620354"/>
+    <interface_ref client_id="node1:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc304:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620355"/>
+    <interface_ref client_id="node2:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc252:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620356"/>
+    <interface_ref client_id="node3:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc343:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620357"/>
+    <interface_ref client_id="node4:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc268:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620358"/>
+    <interface_ref client_id="node5:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc274:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620359"/>
+    <interface_ref client_id="node6:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc264:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620360"/>
+    <interface_ref client_id="node7:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc255:eth5" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620361"/>
+    <interface_ref client_id="node8:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc344:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620362"/>
+    <interface_ref client_id="node9:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc324:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620363"/>
+    <interface_ref client_id="node10:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc319:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620364"/>
+    <interface_ref client_id="node11:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc352:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620365"/>
+    <interface_ref client_id="node12:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc318:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620366"/>
+    <interface_ref client_id="node13:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc266:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620367"/>
+    <interface_ref client_id="node14:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc283:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620368"/>
+    <interface_ref client_id="node15:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc348:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620369"/>
+    <interface_ref client_id="node16:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc276:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620370"/>
+    <interface_ref client_id="node17:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc206:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620371"/>
+    <interface_ref client_id="node18:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc210:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620372"/>
+    <interface_ref client_id="node19:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc320:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620373"/>
+    <interface_ref client_id="node20:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc306:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620374"/>
+    <interface_ref client_id="node21:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc339:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620375"/>
+    <interface_ref client_id="node22:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc253:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620376"/>
+    <interface_ref client_id="node23:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc309:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620377"/>
+    <interface_ref client_id="node24:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc300:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620378"/>
+    <interface_ref client_id="node25:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc212:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620379"/>
+    <interface_ref client_id="node26:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc336:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620380"/>
+    <interface_ref client_id="node27:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc288:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620381"/>
+    <interface_ref client_id="node28:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc349:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620382"/>
+    <interface_ref client_id="node29:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc244:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620383"/>
+    <interface_ref client_id="node30:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc208:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620384"/>
+    <interface_ref client_id="node31:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc296:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620385"/>
+    <interface_ref client_id="node32:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc223:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620386"/>
+    <interface_ref client_id="node33:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc245:eth3" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620387"/>
+    <interface_ref client_id="node34:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc340:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620388"/>
+    <interface_ref client_id="node35:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc269:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620389"/>
+    <interface_ref client_id="node36:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc241:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620390"/>
+    <interface_ref client_id="node37:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc265:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620391"/>
+    <interface_ref client_id="node38:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc271:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620392"/>
+    <interface_ref client_id="node39:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc298:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620393"/>
+    <interface_ref client_id="node40:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc243:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620394"/>
+    <interface_ref client_id="node41:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc315:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620395"/>
+    <interface_ref client_id="node42:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc323:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620396"/>
+    <interface_ref client_id="node43:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc201:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620397"/>
+    <interface_ref client_id="node44:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc278:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620398"/>
+    <interface_ref client_id="node45:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc248:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620399"/>
+    <interface_ref client_id="node46:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc260:eth3" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620400"/>
+    <interface_ref client_id="node47:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc326:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620401"/>
+    <interface_ref client_id="node48:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc357:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620402"/>
+    <interface_ref client_id="node49:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc211:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620403"/>
+    <interface_ref client_id="node50:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc258:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620404"/>
+    <interface_ref client_id="node51:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc328:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620405"/>
+    <interface_ref client_id="node52:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc207:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620406"/>
+    <interface_ref client_id="node53:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc256:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620407"/>
+    <interface_ref client_id="node54:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc312:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620408"/>
+    <interface_ref client_id="node55:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc359:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620409"/>
+    <interface_ref client_id="node56:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc257:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620410"/>
+    <interface_ref client_id="node57:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc351:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620411"/>
+    <interface_ref client_id="node58:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc322:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620412"/>
+    <interface_ref client_id="node59:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc249:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620413"/>
+    <interface_ref client_id="node60:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc281:eth4" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620414"/>
+    <interface_ref client_id="node61:eth1" component_id="urn:publicid:IDN+emulab.net+interface+pc247:eth2" sliver_id="urn:publicid:IDN+emulab.net+sliver+1620415"/>
     <link_type name="lan"/>
     <component_manager name="urn:publicid:IDN+emulab.net+authority+cm"/>
+    <emulab:switchpath>cisco8:cisco5</emulab:switchpath>
   </link>
   <rspec_tour xmlns="http://www.protogeni.net/resources/rspec/ext/apt-tour/1">
     <description type="markdown">Variable number of nodes in a lan. You have the option of picking from one
@@ -120,13 +1386,13 @@ Use `sudo` to run root commands.
     <data_item name="emulab.net.parameter.tempFileSystemMount">/mydata</data_item>
     <data_item name="emulab.net.parameter.exclusiveVMs">True</data_item>
     <data_item name="emulab.net.parameter.bestEffort">False</data_item>
-    <data_item name="emulab.net.parameter.phystype">d430</data_item>
+    <data_item name="emulab.net.parameter.phystype">pc3000</data_item>
     <data_item name="emulab.net.parameter.sameSwitch">False</data_item>
-    <data_item name="emulab.net.parameter.osImage">default</data_item>
-    <data_item name="emulab.net.parameter.nodeCount">5</data_item>
+    <data_item name="emulab.net.parameter.osImage">urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD</data_item>
+    <data_item name="emulab.net.parameter.nodeCount">62</data_item>
     <data_item name="emulab.net.parameter.startVNC">False</data_item>
   </data_set>
-  <emulab:portal name="cloudlab" url="https://www.cloudlab.us/status.php?uuid=5b2ee5bd-e73c-11ef-af1a-e4434b2381fc" project="OrderFairness" experiment="dod-4" sequence="1739143194"/>
+  <emulab:portal name="cloudlab" url="https://www.cloudlab.us/status.php?uuid=63d9b930-fdcf-11ef-af1a-e4434b2381fc" project="OrderFairness" experiment="dod-scalability" sequence="1741625270"/>
   <rs:site_info xmlns:rs="http://www.protogeni.net/resources/rspec/ext/site-info/1">
     <rs:location country="US" latitude="40.768652" longitude="-111.84581"/>
   </rs:site_info>
