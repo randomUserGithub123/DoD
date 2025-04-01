@@ -64,10 +64,6 @@ This command may take a long time the first time you run it and you can customiz
  Max batch delay: 100 ms
 
  + RESULTS:
- Consensus TPS: 46,478 tx/s
- Consensus BPS: 23,796,531 B/s
- Consensus latency: 464 ms
-
  End-to-end TPS: 46,149 tx/s
  End-to-end BPS: 23,628,541 B/s
  End-to-end latency: 557 ms
