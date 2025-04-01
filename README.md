@@ -1,24 +1,47 @@
-# Narwhal and Tusk
+# DAG of DAGs (DoD)
 
-[![build status](https://img.shields.io/github/workflow/status/asonnino/narwhal/Rust/master?style=flat-square&logo=github)](https://github.com/asonnino/narwhal/actions)
-[![rustc](https://img.shields.io/badge/rustc-1.51+-blue?style=flat-square&logo=rust)](https://www.rust-lang.org)
-[![license](https://img.shields.io/badge/license-Apache-blue.svg?style=flat-square)](LICENSE)
-
-This repo provides an implementation of [Narwhal and Tusk](https://arxiv.org/pdf/2105.11827.pdf). The codebase has been designed to be small, efficient, and easy to benchmark and modify. It has not been designed to run in production but uses real cryptography ([dalek](https://doc.dalek.rs/ed25519_dalek)), networking ([tokio](https://docs.rs/tokio)), and storage ([rocksdb](https://docs.rs/rocksdb)).
+This repo provides an implementation of [DoD]. The codebase has been designed to be small, efficient, and easy to benchmark and modify. It has not been designed to run in production but uses real cryptography ([dalek](https://doc.dalek.rs/ed25519_dalek)), networking ([tokio](https://docs.rs/tokio)), and storage ([rocksdb](https://docs.rs/rocksdb)).
 
 ## Quick Start
 The core protocols are written in Rust, but all benchmarking scripts are written in Python and run with [Fabric](http://www.fabfile.org/).
-To deploy and benchmark a testbed of 4 nodes on your local machine, clone the repo and install the python dependencies:
+To deploy and benchmark a testbed on your local machine, 
+
+#### Run the following basic commands
 ```
-$ git clone https://github.com/asonnino/narwhal.git
-$ cd narwhal/benchmark
+$ sudo apt-get update
+$ sudo apt-get -y upgrade
+$ sudo apt-get -y autoremove
+```
+#### Install following dependencies
+```
+$ sudo apt-get -y install build-essential
+$ sudo apt-get -y install cmake
+```
+#### Install rust (non-interactive)
+```
+$ curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+$ source $HOME/.cargo/env
+$ rustup default stable
+```
+#### install clang (needed for Rocksdb)
+```
+$ sudo apt-get install -y clang
+```
+#### install pip if not installed already
+```
+$ sudo apt install python3-pip
+```         
+#### clone the repo and install the python dependencies:
+```
+$ git clone -b heena/in-mem-missing-edge-store https://github.com/HeenaNagda/DoD.git
+$ cd DoD/benchmark
 $ pip install -r requirements.txt
 ```
-You also need to install Clang (required by rocksdb) and [tmux](https://linuxize.com/post/getting-started-with-tmux/#installing-tmux) (which runs all nodes and clients in the background). Finally, run a local benchmark using fabric:
+#### Finally, run a local benchmark using fabric:
 ```
 $ fab local
 ```
-This command may take a long time the first time you run it (compiling rust code in `release` mode may be slow) and you can customize a number of benchmark parameters in `fabfile.py`. When the benchmark terminates, it displays a summary of the execution similarly to the one below.
+This command may take a long time the first time you run it and you can customize a number of benchmark parameters in `fabfile.py`. When the benchmark terminates, it displays a summary of the execution similarly to the one below.
 ```
 -----------------------------------------
  SUMMARY:
@@ -50,20 +73,8 @@ This command may take a long time the first time you run it (compiling rust code
  End-to-end latency: 557 ms
 -----------------------------------------
 ```
-
 ## Next Steps
-The next step is to read the paper [Narwhal and Tusk: A DAG-based Mempool and Efficient BFT Consensus](https://arxiv.org/pdf/2105.11827.pdf). It is then recommended to have a look at the README files of the [worker](https://github.com/asonnino/narwhal/tree/master/worker) and [primary](https://github.com/asonnino/narwhal/tree/master/primary) crates. An additional resource to better understand the Tusk consensus protocol is the paper [All You Need is DAG](https://arxiv.org/abs/2102.08325) as it describes a similar protocol. 
-
-The README file of the [benchmark folder](https://github.com/asonnino/narwhal/tree/master/benchmark) explains how to benchmark the codebase and read benchmarks' results. It also provides a step-by-step tutorial to run benchmarks on [Amazon Web Services (AWS)](https://aws.amazon.com) accross multiple data centers (WAN).
+The README file of the [benchmark folder](https://github.com/HeenaNagda/DoD/tree/main/benchmark) explains how to benchmark the codebase and read benchmarks' results. It also provides a step-by-step tutorial to run benchmarks on [Cloudlab](https://www.cloudlab.us/).
 
 ## License
 This software is licensed as [Apache 2.0](LICENSE).
-
-## TODO
-#1 Check if worker 1 is sending to exactly to the worker 1 of other parties: checked
-#2 Create Tx ids based on global Tx ids
-#3 Check if client sends sharded tx to right workers (based on worker id)
-#4 Store transaction as well as missing edges in the store.
-#5 input thresholds and execution threads
-#6 store transaction agains digest in the store
-#7 Eventual consistency
