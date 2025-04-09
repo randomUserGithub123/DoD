@@ -1,4 +1,4 @@
-# DAG of DAGs (DoD)
+# DoD: DAG of DAGs
 
 This repo provides an implementation of [DoD]. The codebase has been designed to be small, efficient, and easy to benchmark and modify. It has not been designed to run in production but uses real cryptography ([dalek](https://doc.dalek.rs/ed25519_dalek)), networking ([tokio](https://docs.rs/tokio)), and storage ([rocksdb](https://docs.rs/rocksdb)).
 
