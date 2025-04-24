@@ -135,7 +135,7 @@ impl Synchronizer {
                 // Handle primary's messages.
                 Some(message) = self.rx_message.recv() => match message {
                     PrimaryWorkerMessage::Synchronize(digests, target) => {
-                        info!("Received PrimaryWorkerMessage::Synchronize request for digests = {:?}", digests);
+                        // info!("Received PrimaryWorkerMessage::Synchronize request for digests = {:?}", digests);
                         let now = SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .expect("Failed to measure time")
@@ -186,9 +186,8 @@ impl Synchronizer {
                     },
 
                     PrimaryWorkerMessage::Execute(certificate) => {
-                        info!("PrimaryWorkerMessage::Execute START");
+                        // info!("PrimaryWorkerMessage::Execute START");
                         for digest in certificate.header.payload.keys() {
-                            info!("send digest = {:?} for execution", *digest);
                             self.exe_queue.execute(*digest).await;
                         }
                     },
@@ -213,7 +212,7 @@ impl Synchronizer {
 
                     // TODO: Receive global order round from Primary
                     PrimaryWorkerMessage::AdvanceRound(round) => {
-                        info!("AdvanceRound received from Primary::Proposer = {:?}", round);
+                        // info!("AdvanceRound received from Primary::Proposer = {:?}", round);
                         self.tx_batch_round
                             .send(round)
                             .await

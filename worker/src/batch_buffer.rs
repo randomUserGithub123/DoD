@@ -90,23 +90,33 @@ impl BatchBuffer {
         loop {
             tokio::select! {
                 Some(batch) = self.rx_message.recv() => {
-                    info!("batch_buffer::run: received batch");
-                    // self.batch_store.push_back(batch);
-                    // self.seal_round_no_active_round(batch).await;
-                    if !self.in_round {
-                        self.in_round = true;
-                        // send this to the next stage (quorum waiter)
-                        self.seal_round_no_active_round(batch).await;
-                    } else {
-                        self.batch_store.push_back(batch);
-                    }
+                    // info!("batch_buffer::run: received batch");
+                    // info!("batch_buffer::run: sealing round no active round");
+                    self.seal_round_no_active_round(batch).await;
+                    // info!("batch_buffer::run: done sealing round no active round");
+                    // if !self.in_round {
+                    //     info!("batch_buffer::run: starting new round");
+                    //     self.in_round = true;
+                    //     // send this to the next stage (quorum waiter)
+                    //     info!("batch_buffer::run: sealing round no active round");
+                    //     self.seal_round_no_active_round(batch).await;
+                    //     info!("batch_buffer::run: done sealing round no active round");
+                    // } else {
+                    //     info!("batch_buffer::run: adding batch to store, length = {:?}", self.batch_store.len());
+                    //     self.batch_store.push_back(batch);
+                    //     info!("batch_buffer::run: done adding batch to store, length = {:?}", self.batch_store.len());
+                    // }
                 }
                 Some(round_done_message) = self.rx_round_done.recv() => {
-                    if (self.batch_store.len() == 0) {
-                        self.in_round = false;
-                    } else {
-                        self.seal_round(round_done_message).await;
-                    }
+                    // info!("batch_buffer::run: received round_done_message for round = {:?}", round_done_message.rashnu_round);
+                    // if (self.batch_store.len() == 0) {
+                    //     info!("batch_buffer::run: no batches in store, ending round");
+                    //     self.in_round = false;
+                    // } else {
+                    //     info!("batch_buffer::run: sealing round");
+                    //     self.seal_round(round_done_message).await;
+                    //     info!("batch_buffer::run: done sealing round");
+                    // }
 
                     // handle the case where the current Rashnu round is done
                     // let current_batch_msg = self.batch_store.pop_front().unwrap();
@@ -173,19 +183,19 @@ impl BatchBuffer {
         let serialized = bincode::serialize(&message).expect("Failed to serialize the batch");
 
         let digest = Digest(Sha512::digest(&serialized).as_slice()[..32].try_into().unwrap()); // compute digest
-        info!("batch_buffer::run: local_order_len = {:?}, digest = {:?}", local_order_len, digest);
+        // info!("batch_buffer::run: local_order_len = {:?}, digest = {:?}", local_order_len, digest);
 
-        #[cfg(feature = "benchmark")]
-        {
-            // NOTE: This is one extra hash that is only needed to print the following log entries.
-            let digest = Digest(
-                Sha512::digest(&serialized).as_slice()[..32]
-                    .try_into()
-                    .unwrap(),
-            );
-            // NOTE: This log entry is used to compute performance.
-            info!("Batch {:?} ------ {} B", digest, local_order_len);
-        }
+        // #[cfg(feature = "benchmark")]
+        // {
+        //     // NOTE: This is one extra hash that is only needed to print the following log entries.
+        //     let digest = Digest(
+        //         Sha512::digest(&serialized).as_slice()[..32]
+        //             .try_into()
+        //             .unwrap(),
+        //     );
+        //     // NOTE: This log entry is used to compute performance.
+        //     info!("Batch {:?} ------ {} B", digest, local_order_len);
+        // }
 
         let (names, addresses): (Vec<_>, _) = self.workers_addresses.iter().cloned().unzip();
         let bytes = Bytes::from(serialized.clone());
@@ -197,10 +207,11 @@ impl BatchBuffer {
                 handlers: names.into_iter().zip(handlers.into_iter()).collect() 
             })
             .await.expect("Failed to send the batch to the next stage");
+        // info!("batch_buffer::seal_round_no_active_round: done sending batch to the next stage");
     }
 
     async fn seal_round(&mut self, round_done_message: BatchBufferRoundDoneMessage) {
-        info!("batch_buffer::seal_round: sealing round = {:?}", round_done_message.rashnu_round);
+        // info!("batch_buffer::seal_round: sealing round = {:?}", round_done_message.rashnu_round);
         let mut final_batch = Vec::new();
         let current_batch_msg = self.batch_store.pop_front().unwrap();
         let current_batch = current_batch_msg.batch;
@@ -218,12 +229,14 @@ impl BatchBuffer {
             if let Some(node_info) = self.node_info_map.get_mut(&node) {
                 if !node_info.included_in_global_order {
                     // add this node to the batch
+                    // info!("batch_buffer::seal_round: adding tx to final batch, node = {:?}", node);
                     final_batch.push((node, node_info.tx.clone()));
                 }
             }
         }
         // Step 2 : add all txs received in the current round
         for (node, tx) in current_batch {
+            // info!("batch_buffer::seal_round: adding tx to final batch, node = {:?}", node);
             final_batch.push((node, tx.clone()));
             self.node_info_map.insert(node, NodeInfo { node, tx, sent: true, included_in_global_order: false });
         }
@@ -237,7 +250,7 @@ impl BatchBuffer {
         let serialized = bincode::serialize(&message).expect("Failed to serialize the batch");
 
         let digest = Digest(Sha512::digest(&serialized).as_slice()[..32].try_into().unwrap()); // compute digest
-        info!("batch_buffer::run: local_order_len = {:?}, digest = {:?}", local_order_len, digest);
+        // info!("batch_buffer::run: local_order_len = {:?}, digest = {:?}", local_order_len, digest);
 
         #[cfg(feature = "benchmark")]
         {

@@ -114,14 +114,14 @@ pub struct GlobalDependencyGraph{
 
 impl GlobalDependencyGraph{
     pub fn new(local_order_graphs: Vec<DiGraphMap<Node, u8>>, fixed_tx_threshold: f32, pending_tx_threshold: f32) -> Self {
-        info!("In new global dependency graph fixed_tx_threshold = {:?}, pending_tx_threshold = {:?}", fixed_tx_threshold, pending_tx_threshold);
-        info!("Local order graphs:");
+        info!("GlobalDependencyGraph::new fixed_tx_threshold = {:?}, pending_tx_threshold = {:?}", fixed_tx_threshold, pending_tx_threshold);
+        // info!("Local order graphs:");
         // for (i, graph) in local_order_graphs.iter().enumerate() {
         //     info!("Graph {}: {} nodes, {} edges", i, graph.node_count(), graph.edge_count());
         //     info!("Nodes: {:?}", graph.nodes().collect::<Vec<_>>());
         //     info!("Edges: {:?}", graph.all_edges().collect::<Vec<_>>());
         // }
-        
+        let edge_threshold = f32::min(fixed_tx_threshold, pending_tx_threshold) -1.0;
         // (1) Create an empty graph G=(V,E)
         let mut dag: DiGraphMap<Node, u8> = DiGraphMap::new();
 
@@ -131,6 +131,7 @@ impl GlobalDependencyGraph{
         let mut loop_count:u64 = 0;
         for local_order_graph in &local_order_graphs{
             for node in local_order_graph.nodes(){
+                // info!("global_dependency_graph::new : tx = {:?}", node);
                 let count = *transaction_counts.entry(node).or_insert(0);
                 transaction_counts.insert(node, count+1);
                 loop_count = loop_count + 1;
@@ -141,17 +142,17 @@ impl GlobalDependencyGraph{
                 edge_counts.insert((from, to), edge_counts[&(from, to)]+1);
             }
         }
-        info!("Loop count = {:?}", loop_count);
-        info!("Transaction count = {:?}", transaction_counts.len());
+        // info!("Loop count = {:?}", loop_count);
+        // info!("Transaction count = {:?}", transaction_counts.len());
 
         // (3) Find fixed and pending transactions and add them into the graph
         let mut fixed_transactions: HashSet<Node> = HashSet::new();
         for (&tx, &count) in &transaction_counts{
-            info!("global_dependency_graph::new : tx = {:?}, count = {:?}", tx, count);
+            // info!("global_dependency_graph::new : tx = {:?}, count = {:?}", tx, count);
             if count as f32 >= fixed_tx_threshold || count as f32 >= pending_tx_threshold{
                 dag.add_node(tx);
             }
-            if count as f32 >= pending_tx_threshold{
+            if count as f32 >= fixed_tx_threshold{
                 fixed_transactions.insert(tx);
             }
         }
@@ -160,10 +161,31 @@ impl GlobalDependencyGraph{
         // (5) Find missing edges in this graph
         let mut missed_edges: HashMap<(Node, Node), u16> = HashMap::new();
         for (&(from, to), &count) in &edge_counts{
+            // let fwd_edge_count = count as f32;
+            // let rev_edge_count = edge_counts[&(to, from)] as f32;
+            // let min_thr = fixed_tx_threshold.min(pending_tx_threshold);
+            
+            // if fwd_edge_count<min_thr && rev_edge_count<min_thr{
+            //     missed_edges.insert((from,to), fwd_edge_count as u16);
+            //     missed_edges.insert((to, from), rev_edge_count as u16);
+            // }
+            // else{
+            //     dag.add_edge(from, to, 1);
+            // }
+
+            // if ((count as f32) >= fixed_tx_threshold || (count as f32) >= pending_tx_threshold) && count > edge_counts[&(to, from)]{
+            //     dag.add_edge(from, to, 1);
+            // }
+            // else if !((edge_counts[&(to, from)] as f32) >= fixed_tx_threshold || (edge_counts[&(to, from)] as f32) >= pending_tx_threshold){
+            //     // edge between 'from' and 'to' is missing
+            //     missed_edges.insert((from,to), count);
+            //     missed_edges.insert((to, from), edge_counts[&(to, from)]);
+            // }
+
             if ((count as f32) >= fixed_tx_threshold || (count as f32) >= pending_tx_threshold) && count > edge_counts[&(to, from)]{
                 dag.add_edge(from, to, 1);
             }
-            else if !((edge_counts[&(to, from)] as f32) >= fixed_tx_threshold || (edge_counts[&(to, from)] as f32) >= pending_tx_threshold){
+            else if dag.contains_node(from) && dag.contains_node(to) && (count as f32) < edge_threshold && (count as f32) > 0.0{
                 // edge between 'from' and 'to' is missing
                 missed_edges.insert((from,to), count);
                 missed_edges.insert((to, from), edge_counts[&(to, from)]);
@@ -240,7 +262,7 @@ pub struct GlobalOrderGraph{
 
 impl GlobalOrderGraph{
     pub fn new(local_order_graphs: Vec<DiGraphMap<Node, u8>>, fixed_tx_threshold: f32, pending_tx_threshold: f32) -> Self {
-        info!("In new global order graph");
+        // info!("In new global order graph");
         let global_dependency_graph: GlobalDependencyGraph = GlobalDependencyGraph::new(local_order_graphs, fixed_tx_threshold, pending_tx_threshold);
         let pruned_graph: PrunedGraph = PrunedGraph::new(global_dependency_graph.get_dag(), global_dependency_graph.get_fixed_transactions());
         let global_order_graph: DiGraphMap<Node, u8> = pruned_graph.get_dag();

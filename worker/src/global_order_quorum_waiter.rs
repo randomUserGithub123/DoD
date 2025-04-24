@@ -71,9 +71,9 @@ impl GlobalOrderQuorumWaiter {
             let mut total_stake = self.stake;
             while let Some(stake) = wait_for_quorum.next().await {
                 total_stake += stake;
-                info!("Sending Global order to Orther workers");
+                // info!("global_order_quorum_waiter::run: total_stake = {:?}", total_stake);
                 if total_stake >= self.committee.quorum_threshold() {
-                    info!("Received 2f acks, Sending Global order to the global order processor");
+                    // info!("Received 2f acks, Sending Global order to the global order processor");
                     self.tx_order
                         .send(global_order_info)
                         .await
@@ -81,6 +81,7 @@ impl GlobalOrderQuorumWaiter {
                     break;
                 }
             }
+            // info!("global_order_quorum_waiter::run: done delivering global order");
         }
     }
 }

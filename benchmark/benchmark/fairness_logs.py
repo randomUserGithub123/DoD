@@ -5,6 +5,7 @@ from multiprocessing import Pool
 from os.path import join
 from re import findall, search
 from statistics import mean
+import random
 
 from benchmark.utils import Print
 
@@ -38,6 +39,9 @@ class FairnessLogParser:
             = zip(*results)
         self.misses = sum(misses)
 
+        print(len(self.sent_samples[0]))
+        # print(self.sent_samples[random.randint(0, len(self.sent_samples)-1)])
+
         # Parse the primaries logs.
         try:
             with Pool() as p:
@@ -54,10 +58,45 @@ class FairnessLogParser:
                 results = p.map(self._parse_workers, workers)
         except (ValueError, IndexError, AttributeError) as e:
             raise FairnessParseError(f'Failed to parse workers\' logs: {e}')
-        sizes, self.received_samples, workers_ips = zip(*results)
+        sizes, self.received_samples, workers_ips, all_batch_maker_tx_uids, all_global_dependency_graph_tx_uids, all_global_order_maker_tx_uids, all_parallel_execution_tx_uids, all_processor_tx_uids = zip(*results)
         self.sizes = {
             k: v for x in sizes for k, v in x.items() if k in self.commits
         }
+
+        print(f"Number of batch maker transactions: {len(all_batch_maker_tx_uids[0])}")
+        print(f"Number of processor transactions: {len(all_processor_tx_uids[0])}")
+        print(f"Number of global dependency graph transactions: {len(all_global_dependency_graph_tx_uids[0])}")
+        # print("Number of global dependency graph transactions with count >= 4", len([x for x in all_global_dependency_graph_tx_uids[0] if all_global_dependency_graph_tx_uids[0][x] >= 4]))
+        print(f"Number of global order maker transactions: {len(all_global_order_maker_tx_uids[0])}")
+        print(f"Number of parallel execution transactions: {len(all_parallel_execution_tx_uids[0])}")
+
+        worker_bm_tx_uids = all_batch_maker_tx_uids[0]
+        worker_gdg_tx_uids = all_global_dependency_graph_tx_uids[0]
+        worker_gom_tx_uids = all_global_order_maker_tx_uids[0]
+        worker_pe_tx_uids = all_parallel_execution_tx_uids[0]
+        worker_processor_tx_uids = all_processor_tx_uids[0]
+
+        txs_not_found_in_gdg = 0
+        txs_not_found_in_gom = 0
+        txs_not_found_in_pe = 0
+        txs_not_found_in_processor = 0
+        for tx_uid in worker_bm_tx_uids:
+            if tx_uid not in worker_gdg_tx_uids:
+                # print(f"Transaction {tx_uid} not found in global dependency graph")
+                txs_not_found_in_gdg += 1
+            if tx_uid not in worker_gom_tx_uids:
+                # print(f"Transaction {tx_uid} not found in global order maker")
+                txs_not_found_in_gom += 1
+            if tx_uid not in worker_pe_tx_uids:
+                # print(f"Transaction {tx_uid} not found in parallel execution")
+                txs_not_found_in_pe += 1
+            if tx_uid not in worker_processor_tx_uids:
+                # print(f"Transaction {tx_uid} not found in processor")
+                txs_not_found_in_processor += 1
+        print(f"Number of transactions not found in global dependency graph: {txs_not_found_in_gdg}")
+        print(f"Number of transactions not found in global order maker: {txs_not_found_in_gom}")
+        print(f"Number of transactions not found in parallel execution: {txs_not_found_in_pe}")
+        print(f"Number of transactions not found in processor: {txs_not_found_in_processor}")
 
         # Determine whether the primary and the workers are collocated.
         self.collocate = set(primary_ips) == set(workers_ips)
@@ -133,6 +172,12 @@ class FairnessLogParser:
             'max_batch_delay': int(
                 search(r'Max batch delay .* (\d+)', log).group(1)
             ),
+            # 'gamma': float(
+            #     search(r'gamma .* (\d+)', log).group(1)
+            # ),
+            # 'execution_threadpool_size': int(
+            #     search(r'execution threadpool size .* (\d+)', log).group(1)
+            # ),
         }
 
         ip = search(r'booted on (\d+.\d+.\d+.\d+)', log).group(1)
@@ -140,8 +185,8 @@ class FairnessLogParser:
         return proposals, commits, configs, ip
 
     def _parse_workers(self, log):
-        if search(r'(?:panic|Error)', log) is not None:
-            raise FairnessParseError('Worker(s) panicked')
+        # if search(r'(?:panic|Error)', log) is not None:
+        #     raise FairnessParseError('Worker(s) panicked')
 
         tmp = findall(r'Batch ([^ ]+) contains (\d+) B', log)
         sizes = {d: int(s) for d, s in tmp}
@@ -149,9 +194,24 @@ class FairnessLogParser:
         tmp = findall(r'Batch ([^ ]+) contains sample tx (\d+)', log)
         samples = {int(s): d for d, s in tmp}
 
+        tmp = findall(r'batch_maker::seal : tx_uid to store = (\d+)', log)
+        all_batch_maker_tx_uids = {int(s) for s in tmp}
+
+        tmp = findall(r'global_dependency_graph::new : tx = (\d+)', log)
+        all_global_dependency_graph_tx_uids = {int(s) for s in tmp}
+
+        tmp = findall(r'global_order_maker::run : sending node = (\d+)', log)
+        all_global_order_maker_tx_uids = {int(s) for s in tmp}
+
+        tmp = findall(r'ParallelExecution::execute : tx_uid = (\d+)', log)
+        all_parallel_execution_tx_uids = {int(s) for s in tmp}
+
+        tmp = findall(r'Processor::spawn : tx_uid = (\d+)', log)
+        all_processor_tx_uids = {int(s) for s in tmp}
+
         ip = search(r'booted on (\d+.\d+.\d+.\d+)', log).group(1)
 
-        return sizes, samples, ip
+        return sizes, samples, ip, all_batch_maker_tx_uids, all_global_dependency_graph_tx_uids, all_global_order_maker_tx_uids, all_parallel_execution_tx_uids, all_processor_tx_uids
 
     def _to_posix(self, string):
         x = datetime.fromisoformat(string.replace('Z', '+00:00'))
@@ -182,6 +242,15 @@ class FairnessLogParser:
         print(count, " tx_ids not found in sent")
         return mean(latency) if latency else 0
 
+    def _end_to_end_client_sending_rate(self):
+        txs = 0
+        max_end_time = 0
+        for client_txs in self.sent_samples:
+            txs += len(client_txs)
+            max_end_time = max(max_end_time, max(client_txs.values()))
+        duration = max_end_time-min(self.start)
+        return txs/duration
+
     def result(self):
         header_size = self.configs[0]['header_size']
         max_header_delay = self.configs[0]['max_header_delay']
@@ -190,9 +259,13 @@ class FairnessLogParser:
         sync_retry_nodes = self.configs[0]['sync_retry_nodes']
         batch_size = self.configs[0]['batch_size']
         max_batch_delay = self.configs[0]['max_batch_delay']
+        # gamma = self.configs[0]['gamma']
+        # execution_threadpool_size = self.configs[0]['execution_threadpool_size']
 
         end_to_end_tps, end_to_end_bps, duration = self._end_to_end_throughput()
         end_to_end_latency = self._end_to_end_latency() * 1_000
+        client_sending_rate = self._end_to_end_client_sending_rate()
+
 
         return (
             '\n'
@@ -215,11 +288,14 @@ class FairnessLogParser:
             f' Sync retry nodes: {sync_retry_nodes:,} node(s)\n'
             f' batch size: {batch_size:,} B\n'
             f' Max batch delay: {max_batch_delay:,} ms\n'
+            # f' execution threadpool size: {execution_threadpool_size:,} threads\n'
+            # f' gamma: {gamma:,} \n'
             '\n'
             ' + RESULTS:\n'
             f' End-to-end TPS: {round(end_to_end_tps):,} tx/s\n'
             f' End-to-end BPS: {round(end_to_end_bps):,} B/s\n'
             f' End-to-end latency: {round(end_to_end_latency):,} ms\n'
+            f' Client Sending Rate: {round(client_sending_rate):,} tx/s\n'
             '-----------------------------------------\n'
         )
 

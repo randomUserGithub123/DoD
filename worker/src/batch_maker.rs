@@ -183,7 +183,7 @@ impl BatchMaker {
             let tx_uid = u64::from_be_bytes(tx_uids[i]);
             let tx = &drained_batch[i];
 
-            info!("batch_maker::seal : tx_uid to store = {:?}", tx_uid);
+            // info!("batch_maker::seal : tx_uid to store = {:?}", tx_uid);
 
             // Add transaction against tx_uid in the store for later execution
             self.store.write(tx_uid.to_be_bytes().to_vec(), tx.clone()).await;
@@ -191,7 +191,7 @@ impl BatchMaker {
             // Add transaction to create a local order
             local_order.push((tx_uid, tx.clone()));
         }
-        info!("batch_maker::seal : local_order size number of nodes = {:?}", local_order.len());
+        // info!("batch_maker::seal : local_order size number of nodes = {:?}", local_order.len());
         let batch_buffer_message = BatchBufferMessage {
             batch: local_order,
             rashnu_round: self.rashnu_round,

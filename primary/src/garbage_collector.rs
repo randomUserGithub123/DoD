@@ -9,6 +9,7 @@ use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Receiver;
+use log::{info};
 
 /// Receives the highest round reached by consensus and update it for all tasks.
 pub struct GarbageCollector {
@@ -52,6 +53,10 @@ impl GarbageCollector {
         let mut last_committed_round = 0;
         while let Some(certificate) = self.rx_consensus.recv().await {
             // TODO [issue #9]: Re-include batch digests that have not been sequenced into our next block.
+
+            // for digest in certificate.header.payload.keys() {
+            //     info!("sequenced digest = {:?} for execution", *digest);
+            // }
 
             // Channel ordering towards workers
             let execution_bytes = bincode::serialize(&PrimaryWorkerMessage::Execute(certificate.clone()))

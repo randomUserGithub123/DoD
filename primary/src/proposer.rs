@@ -104,7 +104,7 @@ impl Proposer {
         )
         .await;
         debug!("Created header {:?}", header);
-        info!("Created header with name = {:?}, round = {:?}", self.name, self.round);
+        // info!("Created header with name = {:?}, round = {:?}", self.name, self.round);
 
         #[cfg(feature = "benchmark")]
         for digest in header.payload.keys() {
@@ -132,11 +132,11 @@ impl Proposer {
             // 1. We have a quorum of certificates from the previous round and enough batches' digests;
             // 2. We have a quorum of certificates from the previous round and the specified maximum
             // inter-header delay has passed.
-            info!("payload_size = {:?}, header_size = {:?}", self.payload_size, self.header_size);
+            // info!("payload_size = {:?}, header_size = {:?}", self.payload_size, self.header_size);
             let enough_parents = !self.last_parents.is_empty();
             let enough_digests = self.payload_size >= self.header_size;
             let timer_expired = timer.is_elapsed();
-            info!("timer_expired = {:?}, enough_digests = {:?}, enough_parents = {:?}", timer_expired, enough_digests, enough_parents);
+            // info!("timer_expired = {:?}, enough_digests = {:?}, enough_parents = {:?}", timer_expired, enough_digests, enough_parents);
             if (timer_expired || enough_digests) && enough_parents {
                 // Make a new header.
                 self.make_header().await;
@@ -149,7 +149,7 @@ impl Proposer {
 
             tokio::select! {
                 Some((parents, round)) = self.rx_core.recv() => {
-                    info!("Proposer receives message from core, round :: self.round = {:?} :: {:?}", round, self.round);
+                    // info!("Proposer receives message from core, round :: self.round = {:?} :: {:?}", round, self.round);
                     if round < self.round {
                         continue;
                     }
@@ -167,7 +167,6 @@ impl Proposer {
                     self.last_parents = parents;
                 }
                 Some((digest, worker_id)) = self.rx_workers.recv() => {
-                    info!("OurBatch = {:?} received from workerid = {:?}", digest, worker_id);
                     self.payload_size += digest.size();
                     self.digests.push((digest, worker_id));
                 }

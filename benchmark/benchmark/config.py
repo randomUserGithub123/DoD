@@ -173,6 +173,7 @@ class NodeParameters:
             inputs += [json['sync_retry_nodes']]
             inputs += [json['batch_size']]
             inputs += [json['max_batch_delay']]
+            inputs += [json['execution_threadpool_size']]
             inputs += [json['gamma']]
         except KeyError as e:
             raise ConfigError(f'Malformed parameters: missing key {e}')
@@ -183,6 +184,7 @@ class NodeParameters:
             raise ConfigError('Invalid parameters type')
 
         self.json = json
+        self.gamma = json['gamma']
 
     def print(self, filename):
         assert isinstance(filename, str)

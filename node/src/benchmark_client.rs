@@ -225,12 +225,12 @@ impl Client {
         let interval: tokio::time::Interval = interval(Duration::from_millis(BURST_DURATION));
         tokio::pin!(interval);
 
-        let mut total_send_duration: u128 = 0;
-        let mut total_send_count: u64 = 0;
-        let mut average_send_duration: f64 = 0.0;
-        let mut total_dep_duration: u128 = 0;
-        let mut total_dep_count: u64 = 0;
-        let mut average_dep_duration: f64 = 0.0;
+        // let mut total_send_duration: u128 = 0;
+        // let mut total_send_count: u64 = 0;
+        // let mut average_send_duration: f64 = 0.0;
+        // let mut total_dep_duration: u128 = 0;
+        // let mut total_dep_count: u64 = 0;
+        // let mut average_dep_duration: f64 = 0.0;
 
         // NOTE: This log entry is used to compute performance.
         info!("Start sending transactions");
@@ -238,19 +238,12 @@ impl Client {
         'main: loop {
             interval.as_mut().tick().await;
             let now = Instant::now();
-
             let mut x : u64 = 0;
-            while x <= burst {
+            while x <= self.rate {
                 let tx_uid;
-                if x == counter % burst{
-                    tx_uid = counter;
-                    info!("Sending sample transaction {}", tx_uid);
-                }
-                else{
-                    r += 1;
-                    tx_uid = r;
-                }
-                let bytes = self.sb_handler.get_next_transaction(x == counter % burst, tx_uid);
+                r += 1;
+                tx_uid = r;
+                let bytes = self.sb_handler.get_next_transaction(false, tx_uid);
                 {
                     let mut waiting = waiting.lock().unwrap();
                     waiting.insert(tx_uid);
@@ -258,7 +251,6 @@ impl Client {
                 info!("for fairness Sending tx {}", tx_uid);
 
                 // get the target address besed on dependency
-                let dep_start = Instant::now();
                 let dependency: (char, Vec<u32>) = self.sb_handler.get_transaction_dependency(bytes.clone());
                 let mut target_addr: HashSet<SocketAddr> = HashSet::new();
                 for dep in &dependency.1{
@@ -271,20 +263,6 @@ impl Client {
                         target_addr.insert(*addr);
                     }
                 }
-                let dep_end = Instant::now();
-                let dep_duration = dep_end.duration_since(dep_start);
-                total_dep_duration += dep_duration.as_micros();
-                total_dep_count += 1;
-                average_dep_duration = total_dep_duration as f64 / total_dep_count as f64;
-                // info!("target_addr = {:?}", target_addr);
-                let start = Instant::now();
-                // let addr = target_addr.iter().next().unwrap();
-                // let writer = writers.get_mut(addr).unwrap();
-                // let request = writer.send(bytes);
-                // if let Err(e) = request.await {
-                //     warn!("Failed to send transaction: {}", e);
-                //     break 'main;
-                // }
                 
                 for addr in target_addr {
                     let writer = writers.get_mut(&addr).unwrap();
@@ -294,21 +272,12 @@ impl Client {
                 }
                 
                 x += 1;
-                let end = Instant::now();
-                let duration = end.duration_since(start);
-                total_send_duration += duration.as_micros();
-                total_send_count += 1;
-                average_send_duration = total_send_duration as f64 / total_send_count as f64;
             }
-            total_send_duration = 0;
-            total_send_count = 0;
+
             if now.elapsed().as_millis() > BURST_DURATION as u128 {
                 // NOTE: This log entry is used to compute performance.
                 warn!("Transaction rate too high for this client");
             }
-            counter += 1;
-            info!("average_send_duration = {}", average_send_duration);
-            info!("average_dependency_duration = {:?}", average_dep_duration);
         }
         Ok(())
     }

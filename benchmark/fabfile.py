@@ -14,15 +14,15 @@ from benchmark.remote import Bench, CloudLabBench, BenchError
 def local(ctx, debug=True):
     ''' Run benchmarks on localhost '''
     bench_params = {
-        'faults': 0,
-        'nodes': 2,
-        'workers': 1,
-        'clients': 1,
-        'rate': 50_000,
+        'faults': 1,
+        'nodes': 5,
+        'workers': 4,
+        'clients': 6,
+        'rate': 100_000,
         'tx_size': 512,
         'n_users': 100,
-        'shards': [[0,99]],
-        'skew_factor': 0.1,
+        'shards': [[0,25],[26,50],[51,75],[76,99]],
+        'skew_factor': 0.01,
         'prob_choose_mtx': 1.0,
         'duration': 20,
     }
@@ -32,9 +32,10 @@ def local(ctx, debug=True):
         'gc_depth': 50,  # rounds
         'sync_retry_delay': 10_000,  # ms
         'sync_retry_nodes': 3,  # number of nodes
-        'batch_size': 500_000,  # bytes
+        'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 0.3,
+        'gamma': 0.9,
+        'execution_threadpool_size': 20,
     }
     try:
         ret = LocalBench(bench_params, node_params).run(debug)
@@ -103,18 +104,18 @@ def remote(ctx, debug=False):
     ''' Run benchmarks on AWS '''
     bench_params = {
         'faults': 0,
-        'nodes': [4],
-        'workers': 2,
-        'clients': 8,
+        'nodes': [5],
+        'workers': 4,
+        'clients': 6,
         'collocate': True,
-        'rate': [10_000, 50_000, 110_000],
+        'rate': [100_000],
         'tx_size': 512,
-        'n_users': 20,
-        'shards': [[0,9],[10,19]],
-        'skew_factor': 0.1,
+        'n_users': 100,
+        'shards': [[0,25],[26,50],[51,75],[76,99]],
+        'skew_factor': 0.01,
         'prob_choose_mtx': 1.0,
         'duration': 300,
-        'runs': 2,
+        'runs': 1,
     }
     node_params = {
         'header_size': 1_000,  # bytes
@@ -122,9 +123,10 @@ def remote(ctx, debug=False):
         'gc_depth': 50,  # rounds
         'sync_retry_delay': 10_000,  # ms
         'sync_retry_nodes': 3,  # number of nodes
-        'batch_size': 500_000,  # bytes
+        'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 0.5,
+        'gamma': 0.75,
+        'execution_threadpool_size': 4,
     }
     try:
         # Bench(ctx).run(bench_params, node_params, debug)

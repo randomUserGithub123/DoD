@@ -100,7 +100,7 @@ impl Worker {
             store: store.clone(),
             sb_handler: sb_handler.clone(),
             missed_edge_manager: missed_edge_manager.clone(),
-            exe_queue: ExecutionQueue::new(store.clone(), writer_store.clone(), sb_handler.clone(), missed_edge_manager.clone()),
+            exe_queue: ExecutionQueue::new(store.clone(), writer_store.clone(), sb_handler.clone(), missed_edge_manager.clone(), parameters.execution_threadpool_size),
             writer_store,
         };
 

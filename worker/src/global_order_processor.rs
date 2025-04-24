@@ -48,7 +48,7 @@ impl GlobalOrderProcessor {
         tokio::spawn(async move {
             // TODO: It is GlobalOrderInfo(GlobalOrder, MissedEdgePairs) NOT just GlobalOrder
             while let Some(global_order) = rx_global_order.recv().await {
-                info!("Received Global order to process further. own_digest = {:?}", own_digest);
+                // info!("Received Global order to process further. own_digest = {:?}", own_digest);
 
                     match bincode::deserialize(&global_order).unwrap() {
                         WorkerMessage::GlobalOrderInfo(global_order_graph_serialized, missed_pairs) => {
@@ -87,13 +87,14 @@ impl GlobalOrderProcessor {
 
                 // Store the batch.
                 store.write(digest.to_vec(), global_order).await;
+                // info!("Writing to store = {:?}", digest);
 
                 // Deliver the batch's digest.
                 let message = match own_digest {
                     true => WorkerPrimaryMessage::OurBatch(digest, id),
                     false => WorkerPrimaryMessage::OthersBatch(digest, id),
                 };
-                info!("Sending digest to primary connector. own_digest = {:?}", own_digest);
+                // info!("Sending digest to primary connector. own_digest = {:?}", own_digest);
                 let message = bincode::serialize(&message)
                     .expect("Failed to serialize our own worker-primary message");
                 tx_digest

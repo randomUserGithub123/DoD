@@ -5,6 +5,7 @@ use crate::global_order_maker::GlobalOrderMakerMessage;
 use petgraph::graphmap::DiGraphMap;
 use config::WorkerId;
 use graph::LocalOrderGraph;
+use log::info;
 // use crypto::Digest;
 // use ed25519_dalek::Digest as _;
 // use ed25519_dalek::Sha512;
@@ -48,10 +49,12 @@ impl Processor {
                         let dag: DiGraphMap<Node, u8> = LocalOrderGraph::get_dag_deserialized(serialized_local_order_graph_obj);
                         for node in dag.nodes(){
                             // TODO : Tx id 
+                            // info!("Processor::spawn : tx_uid = {:?}", node);
                         }
                     },
                     _ => panic!("Processor::spawn : Unexpected batch"),
                 }
+                // info!("Processor::spawn : done processing batch");
 
                 // send batch to global order
                 let message1 = GlobalOrderMakerMessage {batch:batch.clone(), own_digest:own_digest}; 
