@@ -148,17 +148,18 @@ class DASBench:
             )
             committee.print(PathMaker.committee_file())
 
-            num_clients = committee.workers()
+            self.node_parameters.print(PathMaker.parameters_file())
+
+            # Assign shard to each worker
+            workers_addresses = committee.workers_addresses(self.faults)
+
+            num_clients = len(workers_addresses) * self.workers
             Print.info(
                 f'num_clients = {num_clients}, n_users = {self.n_users}, '
                 f'Shards = {self.shards}, skew_factor = {self.skew_factor}, '
                 f'prob_choose_mtx = {self.prob_choose_mtx}'
             )
 
-            self.node_parameters.print(PathMaker.parameters_file())
-
-            # Assign shard to each worker
-            workers_addresses = committee.workers_addresses(self.faults)
             worker_to_shard_assignment = {}
             shard_assignment_list = [str(self.workers)]
             for shard in self.bench_parameters.shards:

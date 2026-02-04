@@ -72,16 +72,16 @@ class LocalBench:
 
             names = [x.name for x in keys]
             committee = LocalCommittee(names, self.BASE_PORT, self.workers, self.gamma)
-
-            num_clients = committee.workers()
-            Print.info(f'clients = {num_clients}, n_users = {self.n_users}, Shards = {self.shards}, skew_factor = {self.skew_factor}, prob_choose_mtx = {self.prob_choose_mtx}')
-
             committee.print(PathMaker.committee_file())
 
             self.node_parameters.print(PathMaker.parameters_file())
 
             # Assign shard to each worker
             workers_addresses = committee.workers_addresses(self.faults)
+
+            num_clients = len(workers_addresses) * self.workers
+            Print.info(f'clients = {num_clients}, n_users = {self.n_users}, Shards = {self.shards}, skew_factor = {self.skew_factor}, prob_choose_mtx = {self.prob_choose_mtx}')
+
             worker_to_shard_assignment = {}
             shard_assignment_list = [str(self.workers)]
             for shard in self.bench_parameters.shards:
