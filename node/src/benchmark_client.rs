@@ -239,7 +239,7 @@ impl Client {
             interval.as_mut().tick().await;
             let now = Instant::now();
             let mut x : u64 = 0;
-            while x <= self.rate {
+            while x < burst {
                 let tx_uid;
                 r += 1;
                 tx_uid = r;

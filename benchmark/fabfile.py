@@ -2,6 +2,7 @@
 from fabric import task
 
 from benchmark.local import LocalBench, USE_FAIRNESS_PARSER
+from benchmark.das import DASBench, USE_FAIRNESS_PARSER
 from benchmark.logs import ParseError, LogParser
 from benchmark.fairness_logs import FairnessParseError, FairnessLogParser
 from benchmark.utils import Print
@@ -18,7 +19,7 @@ def local(ctx, debug=True):
         'nodes': 5,
         'workers': 4,
         'clients': 6,
-        'rate': 100_000,
+        'rate': 1_000,
         'tx_size': 512,
         'n_users': 100,
         'shards': [[0,25],[26,50],[51,75],[76,99]],
@@ -43,6 +44,39 @@ def local(ctx, debug=True):
     except BenchError as e:
         Print.error(e)
 
+@task
+def das(ctx, debug=False, username='mputnik'):
+    ''' Run benchmarks on DAS cluster '''
+    bench_params = {
+        'faults': 1,
+        'nodes': [5],
+        'workers': 4,
+        'collocate': True,
+        'rate': [5_000],
+        'tx_size': 512,
+        'n_users': 100,
+        'shards': [[0,25],[26,50],[51,75],[76,99]],
+        'skew_factor': 0.01,
+        'prob_choose_mtx': 1.0,
+        'duration': 60,
+        'runs': 1,
+    }
+    node_params = {
+        'header_size': 1_000,
+        'max_header_delay': 200,
+        'gc_depth': 50,
+        'sync_retry_delay': 10_000,
+        'sync_retry_nodes': 3,
+        'batch_size': 51_200,
+        'max_batch_delay': 200,
+        'gamma': 0.9,
+        'execution_threadpool_size': 20,
+    }
+    try:
+        ret = DASBench(bench_params, node_params, username).run(debug)
+        print(ret.result())
+    except BenchError as e:
+        Print.error(e)
 
 @task
 def create(ctx, nodes=2):

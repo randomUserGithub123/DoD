@@ -42,8 +42,6 @@ class LocalBench:
         assert isinstance(debug, bool)
         Print.heading('Starting local benchmark')
 
-        Print.info(f'clients = {self.clients}, n_users = {self.n_users}, Shards = {self.shards}, skew_factor = {self.skew_factor}, prob_choose_mtx = {self.prob_choose_mtx}')
-
         # Kill any previous testbed.
         self._kill_nodes()
 
@@ -74,6 +72,10 @@ class LocalBench:
 
             names = [x.name for x in keys]
             committee = LocalCommittee(names, self.BASE_PORT, self.workers, self.gamma)
+
+            num_clients = committee.workers()
+            Print.info(f'clients = {num_clients}, n_users = {self.n_users}, Shards = {self.shards}, skew_factor = {self.skew_factor}, prob_choose_mtx = {self.prob_choose_mtx}')
+
             committee.print(PathMaker.committee_file())
 
             self.node_parameters.print(PathMaker.parameters_file())
@@ -98,7 +100,7 @@ class LocalBench:
             # TODO: find correct rate_share
             rate_share = ceil(rate / committee.workers())
             Print.info(f'workers_addresses = {workers_addresses}')
-            for i in range(self.clients):
+            for i in range(num_clients):
                 # TODO: remove worker address altogether
                 # Print.info(f'parties = {max(self.nodes)} party idx = {int(i/max(self.nodes))} worker idx = {i%self.workers}')
                 (id, address) = workers_addresses[int(i/max(self.nodes))][i%self.workers]
