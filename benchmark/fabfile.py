@@ -51,6 +51,7 @@ def das(ctx, debug=False, username='mputnik'):
         'faults': 1,
         'nodes': [5],
         'workers': 4,
+        'clients': 6,
         'collocate': True,
         'rate': [5_000],
         'tx_size': 512,
