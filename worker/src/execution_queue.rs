@@ -131,6 +131,9 @@ impl ExecutionQueue {
                         WorkerMessage::GlobalOrderInfo(global_order_graph_serialized, _missed) => {
                             // deserialize received serialized glbal order graph
                             let dag: DiGraphMap<Node, u8> = GlobalOrderGraph::get_dag_deserialized(global_order_graph_serialized);
+                            
+                            log::info!("FINALIZED!: {}", dag.node_count());
+                            
                             // info!("Sending graph to the parallel execution");
                             let mut parallel_execution:  ParallelExecution = ParallelExecution::new(dag, self.store.clone(), self.writer_store.clone(), self.sb_handler.clone(), self.execution_threadpool_size);
                             parallel_execution.execute().await;    
