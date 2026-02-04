@@ -7,10 +7,11 @@ from benchmark.utils import Print, PathMaker
 class CommandMaker:
 
     @staticmethod
-    def cleanup():
-        return (
-            f'rm -r .db-* ; rm .*.json ; mkdir -p {PathMaker.results_path()}'
-        )
+    def cleanup(username=None):
+        if username:
+            return f'rm -r /var/scratch/{username}/narwhal/benchmark/.db-* ; rm /var/scratch/{username}/narwhal/benchmark/*.json ; mkdir -p {PathMaker.results_path()}'
+        else:
+            return f"rm .db-* ; rm .*.json ; mkdir -p {PathMaker.results_path()}"
 
     @staticmethod
     def clean_logs():
