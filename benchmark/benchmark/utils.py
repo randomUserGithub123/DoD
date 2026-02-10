@@ -76,6 +76,15 @@ class PathMaker:
             PathMaker.results_path(),
             f'bench-{faults}-{nodes}-{workers}-{collocate}-{rate}-{tx_size}.txt'
         )
+    
+    @staticmethod
+    def local_result_file(
+        faults, nodes, workers, input_rate
+    ):
+        return join(
+            PathMaker.results_path(),
+            f"local-{faults}-{nodes}-{workers}-{input_rate}.txt",
+        )
 
     @staticmethod
     def plots_path():

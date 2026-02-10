@@ -101,9 +101,7 @@ def das(ctx, debug=False, username='mputnik'):
             faults,
             nodes,
             workers_per_node,
-            bench_params['collocate'],
             input_rate,
-            bench_params['tx_size']
         )
 
         run = 0
