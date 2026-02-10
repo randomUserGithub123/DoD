@@ -178,7 +178,7 @@ struct Client {
 
 impl Client {
     pub async fn send(&self) -> Result<()> {
-        const PRECISION: u64 = 20; // Sample precision.
+        const PRECISION: u64 = 1; // Sample precision.
         const BURST_DURATION: u64 = 1000 / PRECISION;
 
         // The transaction size must be at least 16 bytes to ensure all txs are different.
@@ -219,9 +219,9 @@ impl Client {
         //     .context(format!("failed to connect to {}", self.target))?;
 
         // Submit all transactions.
-        let burst = (self.rate )/ PRECISION;
-        let mut counter: u64 = 0;
-        let mut r = rand::thread_rng().gen();
+        let mut rng = rand::thread_rng();
+        let burst = self.rate / PRECISION;
+        let mut r = rng.gen();
         let interval: tokio::time::Interval = interval(Duration::from_millis(BURST_DURATION));
         tokio::pin!(interval);
 
@@ -238,8 +238,8 @@ impl Client {
         'main: loop {
             interval.as_mut().tick().await;
             let now = Instant::now();
-            let mut x : u64 = 0;
-            while x < burst {
+            
+            for x in 0..burst {
                 let tx_uid;
                 r += 1;
                 tx_uid = r;
@@ -271,7 +271,6 @@ impl Client {
                     // break;
                 }
                 
-                x += 1;
             }
 
             if now.elapsed().as_millis() > BURST_DURATION as u128 {

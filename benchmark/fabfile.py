@@ -49,11 +49,11 @@ def das(ctx, debug=False, username='mputnik'):
     ''' Run benchmarks on DAS cluster '''
     bench_params = {
         'faults': 1,
-        'nodes': [5],
+        'nodes': 5,
         'workers': 4,
         'clients': 6,
         'collocate': True,
-        'rate': [5_000],
+        'rate': 5_000,
         'tx_size': 512,
         'n_users': 100,
         'shards': [[0,25],[26,50],[51,75],[76,99]],

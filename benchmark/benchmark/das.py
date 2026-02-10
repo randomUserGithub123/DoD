@@ -138,7 +138,6 @@ class DASBench:
             nodes_hostnames = all_hostnames[:nodes_amount]
             clients_hostnames = all_hostnames[nodes_amount:]
 
-            # Create DASCommittee (you may need to adjust this class for shards)
             committee = DASCommittee(
                 names,
                 self.BASE_PORT,
