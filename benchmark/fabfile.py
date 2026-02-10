@@ -5,7 +5,7 @@ from benchmark.local import LocalBench, USE_FAIRNESS_PARSER
 from benchmark.das import DASBench, USE_FAIRNESS_PARSER
 from benchmark.logs import ParseError, LogParser
 from benchmark.fairness_logs import FairnessParseError, FairnessLogParser
-from benchmark.utils import Print
+from benchmark.utils import Print, PathMaker
 from benchmark.plot import Ploter, PlotError
 from benchmark.instance import InstanceManager
 from benchmark.remote import Bench, CloudLabBench, BenchError
@@ -18,9 +18,7 @@ def local(ctx, debug=True):
         'faults': 1,
         'nodes': 5,
         'workers': 4,
-        'clients': 6,
-        'rate': 1_000,
-        'tx_size': 512,
+        'tx_size': 128,
         'n_users': 100,
         'shards': [[0,25],[26,50],[51,75],[76,99]],
         'skew_factor': 0.01,
@@ -35,7 +33,7 @@ def local(ctx, debug=True):
         'sync_retry_nodes': 3,  # number of nodes
         'batch_size': 51_200,  # bytes
         'max_batch_delay': 200,  # ms
-        'gamma': 0.9,
+        'gamma': 1.0,
         'execution_threadpool_size': 20,
     }
     try:
@@ -47,37 +45,81 @@ def local(ctx, debug=True):
 @task
 def das(ctx, debug=False, username='mputnik'):
     ''' Run benchmarks on DAS cluster '''
-    bench_params = {
-        'faults': 1,
-        'nodes': 5,
-        'workers': 4,
-        'clients': 6,
-        'collocate': True,
-        'rate': 5_000,
-        'tx_size': 512,
-        'n_users': 100,
-        'shards': [[0,25],[26,50],[51,75],[76,99]],
-        'skew_factor': 0.01,
-        'prob_choose_mtx': 1.0,
-        'duration': 60,
-        'runs': 1,
-    }
-    node_params = {
-        'header_size': 1_000,
-        'max_header_delay': 200,
-        'gc_depth': 50,
-        'sync_retry_delay': 10_000,
-        'sync_retry_nodes': 3,
-        'batch_size': 51_200,
-        'max_batch_delay': 200,
-        'gamma': 0.9,
-        'execution_threadpool_size': 20,
-    }
-    try:
-        ret = DASBench(bench_params, node_params, username).run(debug)
-        print(ret.result())
-    except BenchError as e:
-        Print.error(e)
+
+    for faults, workers_per_node, nodes, runs, input_rate in [
+        # (4, 4, 17, 5, 500),
+        # (4, 4, 17, 5, 1000),
+        # (4, 4, 17, 5, 1500),
+        # (4, 4, 17, 5, 2000),
+        # (4, 4, 17, 5, 2500),
+        # (4, 4, 17, 5, 3000),
+        # (4, 4, 17, 5, 3500),
+        # (4, 4, 17, 5, 4000),
+        # (4, 4, 17, 5, 4500),
+        # (4, 4, 17, 5, 5000),
+        (1, 4, 5, 5, 4000),
+        (1, 4, 6, 5, 4000),
+        (1, 4, 7, 5, 4000),
+        (1, 4, 8, 5, 4000),
+        (2, 4, 9, 5, 4000),
+        (2, 4, 10, 5, 4000),
+        (2, 4, 11, 5, 4000),
+        (2, 4, 12, 5, 4000),
+        (3, 4, 13, 5, 4000),
+        (3, 4, 14, 5, 4000),
+        (3, 4, 15, 5, 4000),
+        (3, 4, 16, 5, 4000),
+        (4, 4, 17, 5, 4000),
+    ]:
+
+        bench_params = {
+            'faults': faults,
+            'nodes': nodes,
+            'workers': workers_per_node,
+            'collocate': True,
+            'rate': input_rate,
+            'tx_size': 128,
+            'n_users': 100,
+            'shards': [[0,25],[26,50],[51,75],[76,99]],
+            'skew_factor': 0.01,
+            'prob_choose_mtx': 1.0,
+            'duration': 60,
+        }
+        node_params = {
+            'header_size': 1_000,
+            'max_header_delay': 200,
+            'gc_depth': 50,
+            'sync_retry_delay': 10_000,
+            'sync_retry_nodes': 3,
+            'batch_size': 51_200,
+            'max_batch_delay': 200,
+            'gamma': 1.0,
+            'execution_threadpool_size': 20,
+        }
+
+        filename = PathMaker.local_result_file(
+            faults,
+            nodes,
+            workers_per_node,
+            bench_params['collocate'],
+            input_rate,
+            bench_params['tx_size']
+        )
+
+        run = 0
+        while run < runs:
+            try:
+                ret = DASBench(
+                    bench_params, 
+                    node_params, 
+                    username
+                ).run(debug)
+
+                print(ret.result())
+                ret.print(filename)
+                run += 1
+            except BenchError as e:
+                Print.error(e)
 
 @task
 def create(ctx, nodes=2):
