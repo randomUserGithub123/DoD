@@ -59,6 +59,12 @@ impl ThreadWorker {
 
                                         let mut writer_lock = writer_clone.lock().await;
                                         let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
+
+                                        log::info!(
+                                            "TX_FINALIZED: tx_uid={} sent back to client (tx_id_bytes={:?})",
+                                            tx_uid,
+                                            tx_id_vec
+                                        );
                                         
                                         let mut writer_store_lock = writer_store_clone.lock().await;
                                         writer_store_lock.delete_writer(tx_uid);
@@ -67,6 +73,11 @@ impl ThreadWorker {
                                 Ok(None) => error!("ParallelExecutionThread :: Cannot find tx_uid = {:?} in the store", tx_uid),
                                 Err(e) => error!("{}", e),
                             }
+                        } else {
+                            log::warn!(
+                                "TX_SKIPPED: tx_uid={}",
+                                tx_uid
+                            );
                         }
 
 
