@@ -61,9 +61,8 @@ impl ThreadWorker {
                                         let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
 
                                         log::info!(
-                                            "TX_FINALIZED: tx_uid={} sent back to client (tx_id_bytes={:?})",
-                                            tx_uid,
-                                            tx_id_vec
+                                            "TX_FINALIZED: tx_uid={}",
+                                            tx_uid
                                         );
                                         
                                         let mut writer_store_lock = writer_store_clone.lock().await;
