@@ -207,7 +207,6 @@ impl ParallelExecution {
     
         // Create the ExecutionThreadPool inside the execute function
         let (tx_done, mut rx_done) = mpsc::unbounded_channel::<u64>(); // Unbounded channel for notifying completion
-        let tx_done_clone = tx_done.clone();
     
         // Set up the thread pool with a specific size
         let thread_pool_size = self.execution_threadpool_size as usize;
@@ -227,8 +226,6 @@ impl ParallelExecution {
         {
             for (node, in_degree) in &in_degree_map {
                 if *in_degree == 0 {
-                    scheduled_count += 1;
-                    // Send the node to the thread pool for execution
                     thread_pool.send_message(*node).await;
                 }
             }
@@ -240,27 +237,25 @@ impl ParallelExecution {
             if completed_count == total_nodes {
                 break;
             }
-    
-            let mut flag = false;
-            if completed_count == scheduled_count {
-                flag = true;
-            }
-    
+
             // Decrement in-degree for neighbors and schedule them if their in-degree reaches 0
             for neighbor in self.global_order_graph.neighbors(completed_id) {
-                in_degree_map.entry(neighbor).and_modify(|degree| *degree -= 1);
-                if *in_degree_map.get(&neighbor).unwrap() == 0 {
-                    scheduled_count += 1;
-                    // Send the neighbor to the thread pool for execution
-                    thread_pool.send_message(neighbor).await;
+                if let Some(degree) = in_degree_map.get_mut(&neighbor) {
+                    *degree -= 1;
+                    if *degree == 0 {
+                        thread_pool.send_message(neighbor).await;
+                    }
                 }
             }
-    
-            if flag && completed_count == scheduled_count {
-                break;
-            }
         }
-    
+
+        if completed_count < total_nodes {
+            error!(
+                "ParallelExecution::execute: only completed {}/{} nodes — possible cycle or missing node in graph",
+                completed_count, total_nodes
+            );
+        }
+
         // Gracefully shutdown the thread pool once all work is done
         thread_pool.shutdown().await;
     }   

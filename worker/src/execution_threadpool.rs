@@ -46,58 +46,41 @@ impl ThreadWorker {
                     Some(tx_uid) => {
                         let tx_id_vec = tx_uid.to_be_bytes().to_vec();
 
-                        // Get the actual transaction against tx_id from the Store
-                        let mut writer_store_lock = writer_store_clone.lock().await;
-                        if writer_store_lock.writer_exists(tx_uid) {
-                            match store_clone.read(tx_id_vec.clone()).await {
-                                Ok(Some(tx)) => {
-                                    sb_handler_clone.execute_transaction(Bytes::from(tx));
-                                    {
-                                        let writer = writer_store_lock.get_writer(tx_uid); // Get Arc<Mutex<Writer>>
-                                        let writer_clone = Arc::clone(&writer); // Clone before locking
-                                        drop(writer_store_lock); // Release WriterStore lock early
+                        // First: read the transaction from the store WITHOUT holding writer_store_lock
+                        let tx_result = store_clone.read(tx_id_vec.clone()).await;
 
-                                        let mut writer_lock = writer_clone.lock().await;
-                                        let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
+                        match tx_result {
+                            Ok(Some(tx)) => {
+                                sb_handler_clone.execute_transaction(Bytes::from(tx));
 
-                                        log::info!(
-                                            "TX_FINALIZED: tx_uid={}",
-                                            tx_uid
-                                        );
-                                        
-                                        let mut writer_store_lock = writer_store_clone.lock().await;
+                                // Only now check if a client writer exists for this tx
+                                let writer_opt = {
+                                    let mut writer_store_lock = writer_store_clone.lock().await;
+                                    if writer_store_lock.writer_exists(tx_uid) {
+                                        let writer = writer_store_lock.get_writer(tx_uid);
                                         writer_store_lock.delete_writer(tx_uid);
-                                    }                        
+                                        Some(writer)
+                                    } else {
+                                        None
+                                    }
+                                    // writer_store_lock dropped here
+                                };
+
+                                if let Some(writer) = writer_opt {
+                                    let mut writer_lock = writer.lock().await;
+                                    let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
+                                    log::info!("TX_FINALIZED: tx_uid={}", tx_uid);
                                 }
-                                Ok(None) => error!("ParallelExecutionThread :: Cannot find tx_uid = {:?} in the store", tx_uid),
-                                Err(e) => error!("{}", e),
                             }
-                        } else {
-                            log::warn!(
-                                "TX_SKIPPED: tx_uid={}",
-                                tx_uid
-                            );
+                            Ok(None) => {
+                                error!("ThreadWorker :: Cannot find tx_uid = {:?} in the store", tx_uid);
+                            }
+                            Err(e) => {
+                                error!("ThreadWorker :: Store read error for tx_uid = {:?}: {}", tx_uid, e);
+                            }
                         }
 
-
-
-
-                        // {
-                        //     let mut writer_store_lock = writer_store_clone.lock().await;
-                        //     if writer_store_lock.writer_exists(tx_uid) {
-                        //         sb_handler.execute_transaction(Bytes::from(tx_uid.to_be_bytes()));
-                        //         let writer = writer_store_lock.get_writer(tx_uid); // Get Arc<Mutex<Writer>>
-                        //         let writer_clone = Arc::clone(&writer); // Clone before locking
-                        //         drop(writer_store_lock); // Release WriterStore lock early
-
-                        //         let mut writer_lock = writer_clone.lock().await;
-                        //         let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
-                                
-                        //         let mut writer_store_lock = writer_store_clone.lock().await;
-                        //         writer_store_lock.delete_writer(tx_uid);
-                        //     }
-                        // }
-                        // Notify that `tx_uid` is done so we can decrement children’s indeg.
+                        // ALWAYS notify completion regardless of success/failure
                         let _ = tx_done_clone.send(tx_uid);
                     }
                     None => {
