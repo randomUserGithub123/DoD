@@ -470,11 +470,20 @@ impl MessageHandler for PrimaryReceiverHandler {
 
         match bincode::deserialize(&serialized) {
             Err(e) => error!("Failed to deserialize primary message: {}", e),
-            Ok(message) => self
-                .tx_synchronizer
-                .send(message)
-                .await
-                .expect("Failed to send transaction"),
+            Ok(message) => {
+                match &message {
+                    PrimaryWorkerMessage::Execute(cert) => {
+                        info!("PrimaryReceiverHandler: received Execute for round {}", cert.round());
+                    },
+                    _ => {
+                        
+                    },
+                }
+                self.tx_synchronizer
+                    .send(message)
+                    .await
+                    .expect("Failed to send transaction");
+            }
         }
         Ok(())
     }
