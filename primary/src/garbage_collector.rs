@@ -4,7 +4,7 @@ use crate::primary::PrimaryWorkerMessage;
 use bytes::Bytes;
 use config::Committee;
 use crypto::PublicKey;
-use network::SimpleSender;
+use network::{ReliableSender, SimpleSender};
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -20,7 +20,8 @@ pub struct GarbageCollector {
     /// The network addresses of our workers.
     addresses: Vec<SocketAddr>,
     /// A network sender to notify our workers of cleanup events.
-    network: SimpleSender,
+    // network: SimpleSender,
+    network: ReliableSender,
 }
 
 impl GarbageCollector {
@@ -42,7 +43,8 @@ impl GarbageCollector {
                 consensus_round,
                 rx_consensus,
                 addresses,
-                network: SimpleSender::new(),
+                // network: SimpleSender::new(),
+                network: ReliableSender::new(),
             }
             .run()
             .await;
