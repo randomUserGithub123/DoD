@@ -1,4 +1,3 @@
-
 use crate::worker::WorkerMessage;
 use crate::missing_edge_manager::MissingEdgeManager;
 use crate::writer_store::WriterStore;
@@ -55,30 +54,24 @@ impl ExecutionQueue {
             Ok(Some(global_order_info)) => {
                 match bincode::deserialize(&global_order_info).unwrap() {
                     WorkerMessage::GlobalOrderInfo(_global_order_graph, missed) => {
-                        // info!("Adding digest = {:?} to the execution queue", digest);
                         self.queue.push_back(QueueElement{ global_order_digest: digest, missed_pairs: missed, updated_edges: Vec::new()});
                     },
                     _ => panic!("PrimaryWorkerMessage::Execute : Unexpected batch"),
                 }
             }
-            // Ok(None) => error!("Could not find a digest in the store while adding to the execution queue"),
             Ok(None) => {},
             Err(e) => error!("error while adding a digest to the execution queue = {}", e),
         }        
     }
 
     pub async fn execute(&mut self, digest: Digest){
-        // add new element in the queue associated with this new digest
         info!("execution STARTS");
         self.add_to_queue(digest).await;
         info!("execution queue length = {:?}", self.queue.len());
 
         // traverse the queue from front and update missing pairs if any
         for element in self.queue.iter_mut() {
-            // info!("New element to check for missed pairs");
-            // check if missed edges are found for this digest
             if element.missed_pairs.is_empty(){
-                // info!("No missed pairs");
                 continue;
             }
 
@@ -94,11 +87,9 @@ impl ExecutionQueue {
                 } 
             }
 
-            // remove from missed pairs set
             for pair in &updated_pairs{
                 element.missed_pairs.remove(pair);
             }
-            // add to the updated edges
             for edge in &updated_edges{
                 element.updated_edges.push(*edge);
             }
@@ -107,35 +98,28 @@ impl ExecutionQueue {
         // Execute global order if missed edges are found
         let mut n_elements_to_execute = 0;
         for element in self.queue.iter_mut() {
-            // check if there are no missed edges for this digest
             if element.missed_pairs.is_empty(){
-                // TODO: Update the graph based on the "updated_edges"
                 n_elements_to_execute += 1;
             }
             else{
-                // execution can only be done in sequence
                 break;
             }
         }
         
         info!("n_elements_to_execute = {:?}", n_elements_to_execute);
 
-        // remove queue elements and Execute global order if no more missed edges
         for _ in 0..n_elements_to_execute{
             let queue_element: QueueElement = self.queue.pop_front().unwrap();
 
-            // execute the global order graph
             match self.store.read(queue_element.global_order_digest.to_vec()).await {
                 Ok(Some(global_order_info)) => {
                     match bincode::deserialize(&global_order_info).unwrap() {
                         WorkerMessage::GlobalOrderInfo(global_order_graph_serialized, _missed) => {
-                            // deserialize received serialized glbal order graph
                             let dag: DiGraphMap<Node, u8> = GlobalOrderGraph::get_dag_deserialized(global_order_graph_serialized);
                             
                             log::info!("FINALIZED!: {}", dag.node_count());
                             
-                            // info!("Sending graph to the parallel execution");
-                            let mut parallel_execution:  ParallelExecution = ParallelExecution::new(dag, self.store.clone(), self.writer_store.clone(), self.sb_handler.clone(), self.execution_threadpool_size);
+                            let mut parallel_execution: ParallelExecution = ParallelExecution::new(dag, self.store.clone(), self.writer_store.clone(), self.sb_handler.clone(), self.execution_threadpool_size);
                             parallel_execution.execute().await;    
                         },
                         _ => panic!("PrimaryWorkerMessage::Execute : Unexpected global order graph at execution"),
@@ -173,48 +157,55 @@ impl ParallelExecution {
     pub fn schedule_node(tx_uid: u64, writer_store: Arc<futures::lock::Mutex<WriterStore>>, tx_done: mpsc::UnboundedSender<u64>) {
                 
         tokio::spawn(async move {
-
-            // info!("ParallelExecution::schedule_node : tx_uid = {:?} is going to execute in", tx_uid);
             let tx_id_vec = tx_uid.to_be_bytes().to_vec();
             {
                 let mut writer_store_lock = writer_store.lock().await;
                 if writer_store_lock.writer_exists(tx_uid){
-                    // info!("ParallelExecution::schedule_node : tx_uid = {:?} does exist in writer store", tx_uid);
                     let mut writer: Arc<futures::lock::Mutex<Writer>> = writer_store_lock.get_writer(tx_uid);
                     let mut writer_lock = writer.lock().await;
                     let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
                     writer_store_lock.delete_writer(tx_uid);
                 }
-                else{
-                    // info!("ParallelExecution::schedule_node : tx_uid = {:?} does not exist in writer store", tx_uid);
-                }
             }
-            // TODO: execute the node
-            // Notify that `node_id` is done so we can decrement children’s indeg.
             let _ = tx_done.send(tx_uid);
         });
     }
 
     pub async fn execute(&mut self) {
-        // Find incoming edge count for each node in the graph
         let total_nodes = self.global_order_graph.node_count();
         if total_nodes == 0 {
+            info!("ParallelExecution: empty graph, skipping");
             return;
         }
-        let mut scheduled_count = 0;
-    
+
         let mut in_degree_map: HashMap<Node, usize> = HashMap::new();
+        let mut zero_indegree_count: usize = 0;
         for node in self.global_order_graph.nodes() {
-            in_degree_map.insert(node, self.global_order_graph.edges_directed(node, Incoming).count());
+            let indeg = self.global_order_graph.edges_directed(node, Incoming).count();
+            if indeg == 0 {
+                zero_indegree_count += 1;
+            }
+            in_degree_map.insert(node, indeg);
         }
+
+        info!(
+            "ParallelExecution: total_nodes={}, zero_indegree={}, edge_count={}, pool_size={}",
+            total_nodes,
+            zero_indegree_count,
+            self.global_order_graph.edge_count(),
+            self.execution_threadpool_size
+        );
+
+        if zero_indegree_count == 0 {
+            error!("ParallelExecution: NO zero-indegree nodes — graph has a cycle, aborting");
+            return;
+        }
+
+        let (tx_done, mut rx_done) = mpsc::unbounded_channel::<u64>();
     
-        // Create the ExecutionThreadPool inside the execute function
-        let (tx_done, mut rx_done) = mpsc::unbounded_channel::<u64>(); // Unbounded channel for notifying completion
-    
-        // Set up the thread pool with a specific size
         let thread_pool_size = self.execution_threadpool_size as usize;
         let store_clone = self.store.clone();
-        let writer_store_clone = self.writer_store.clone(); // Ensure writer store is cloned for the pool workers
+        let writer_store_clone = self.writer_store.clone();
         let sb_handler_clone = self.sb_handler.clone(); 
     
         let thread_pool = ExecutionThreadPool::new(
@@ -225,18 +216,39 @@ impl ParallelExecution {
             tx_done,
         );
     
-        // Spawn tasks for nodes with in-degree 0
-        {
-            for (node, in_degree) in &in_degree_map {
-                if *in_degree == 0 {
-                    thread_pool.send_message(*node).await;
-                }
+        // Schedule all zero in-degree nodes
+        let mut scheduled_zero = 0;
+        for (node, in_degree) in &in_degree_map {
+            if *in_degree == 0 {
+                thread_pool.send_message(*node).await;
+                scheduled_zero += 1;
             }
         }
-    
-        let mut completed_count = 0;
+
+        info!(
+            "ParallelExecution: scheduled {} zero-indegree nodes, entering completion loop",
+            scheduled_zero
+        );
+
+        let loop_start = std::time::Instant::now();
+        let mut completed_count: usize = 0;
+        let mut last_log_time = std::time::Instant::now();
+
         while let Some(completed_id) = rx_done.recv().await {
             completed_count += 1;
+
+            // Log progress periodically: every 500 completions or every 5 seconds
+            let now = std::time::Instant::now();
+            if completed_count % 500 == 0 || now.duration_since(last_log_time).as_secs() >= 5 {
+                info!(
+                    "ParallelExecution: completed {}/{} (elapsed {}ms)",
+                    completed_count,
+                    total_nodes,
+                    loop_start.elapsed().as_millis()
+                );
+                last_log_time = now;
+            }
+
             if completed_count == total_nodes {
                 break;
             }
@@ -253,14 +265,30 @@ impl ParallelExecution {
         }
 
         if completed_count < total_nodes {
+            // Log which nodes are stuck
+            let stuck_nodes: Vec<(Node, usize)> = in_degree_map.iter()
+                .filter(|(_, deg)| **deg > 0)
+                .map(|(n, d)| (*n, *d))
+                .take(20)  // limit output
+                .collect();
             error!(
-                "ParallelExecution::execute: only completed {}/{} nodes — possible cycle or missing node in graph",
-                completed_count, total_nodes
+                "ParallelExecution: only completed {}/{} nodes (elapsed {}ms). Stuck nodes (first 20): {:?}",
+                completed_count,
+                total_nodes,
+                loop_start.elapsed().as_millis(),
+                stuck_nodes
+            );
+        } else {
+            info!(
+                "ParallelExecution: all {}/{} nodes completed in {}ms",
+                completed_count,
+                total_nodes,
+                loop_start.elapsed().as_millis()
             );
         }
 
-        // Gracefully shutdown the thread pool once all work is done
         thread_pool.shutdown().await;
+        info!("ParallelExecution: shutdown complete");
     }   
 }
 
@@ -308,10 +336,8 @@ impl ParallelExecutionThread {
 
                 tx_uid = locked_queue.pop_front().unwrap();
             }
-            // info!("tx_uid = {:?} is going to execute in ParallelExecutionThread", tx_uid);
             let tx_id_vec = tx_uid.to_be_bytes().to_vec();
 
-            // Get the actual transaction against tx_id from the Store
             match self.store.read(tx_id_vec.clone()).await {
                 Ok(Some(tx)) => {
                     self.sb_handler.execute_transaction(Bytes::from(tx));
@@ -328,7 +354,6 @@ impl ParallelExecutionThread {
                 Ok(None) => error!("ParallelExecutionThread :: Cannot find tx_uid = {:?} in the store", tx_uid),
                 Err(e) => error!("{}", e),
             } 
-            // Add neighbors of the current node
             for neighbor in self.global_order_graph.neighbors(tx_uid){
                 self.shared_queue.lock().unwrap().push_back(neighbor);
             }

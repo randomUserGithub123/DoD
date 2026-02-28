@@ -7,7 +7,7 @@ use bytes::Bytes;
 use futures::SinkExt;
 use smallbank::SmallBankTransactionHandler;
 use store::Store;
-use log::{error, info};
+use log::{error, info, warn};
 
 /// ThreadWorker struct that represents an async worker.
 /// Only stores the id and handle — all other state is moved into the spawned task.
@@ -30,41 +30,66 @@ impl ThreadWorker {
         let mut sb_handler_clone = sb_handler;
         let writer_store_clone = Arc::clone(&writer_store);
         let tx_done_clone = tx_done;
+        let worker_id = id;
 
         let handle = task::spawn(async move {
+            let mut processed_count: u64 = 0;
+
             loop {
                 let msg = {
+                    let acquire_start = std::time::Instant::now();
                     let mut rx = receiver.lock().await;
+                    let acquire_ms = acquire_start.elapsed().as_millis();
+                    if acquire_ms > 1000 {
+                        warn!(
+                            "ThreadWorker {}: waited {}ms to acquire receiver lock",
+                            worker_id, acquire_ms
+                        );
+                    }
                     rx.recv().await
                 };
 
                 match msg {
                     Some(tx_uid) => {
+                        processed_count += 1;
                         let tx_id_vec = tx_uid.to_be_bytes().to_vec();
 
                         // Step 1: Read the transaction from the store
+                        let read_start = std::time::Instant::now();
                         let tx_result = store_clone.read(tx_id_vec.clone()).await;
+                        let read_ms = read_start.elapsed().as_millis();
+                        if read_ms > 1000 {
+                            warn!(
+                                "ThreadWorker {}: store.read took {}ms for tx_uid={}",
+                                worker_id, read_ms, tx_uid
+                            );
+                        }
 
                         // Step 2: Execute the transaction
                         match &tx_result {
                             Ok(Some(tx)) => {
+                                let exec_start = std::time::Instant::now();
                                 sb_handler_clone.execute_transaction(Bytes::from(tx.clone()));
+                                let exec_ms = exec_start.elapsed().as_millis();
+                                if exec_ms > 1000 {
+                                    warn!(
+                                        "ThreadWorker {}: execute_transaction took {}ms for tx_uid={}",
+                                        worker_id, exec_ms, tx_uid
+                                    );
+                                }
                             }
                             Ok(None) => {
-                                error!("ThreadWorker :: Cannot find tx_uid = {:?} in the store", tx_uid);
+                                error!("ThreadWorker {} :: Cannot find tx_uid = {:?} in the store", worker_id, tx_uid);
                             }
                             Err(e) => {
-                                error!("ThreadWorker :: Store read error for tx_uid = {:?}: {}", tx_uid, e);
+                                error!("ThreadWorker {} :: Store read error for tx_uid = {:?}: {}", worker_id, tx_uid, e);
                             }
                         }
 
                         // Step 3: Notify completion IMMEDIATELY — before any client IO.
-                        // This is critical: if the client writer hangs (slow/disconnected client),
-                        // it must NEVER block the execution pipeline.
                         let _ = tx_done_clone.send(tx_uid);
 
                         // Step 4: Send response to client in a fire-and-forget task.
-                        // This runs independently — a stuck TCP connection cannot block the worker.
                         if tx_result.is_ok() && tx_result.as_ref().unwrap().is_some() {
                             let writer_store_for_response = Arc::clone(&writer_store_clone);
                             let tx_id_vec_for_response = tx_id_vec;
@@ -87,9 +112,21 @@ impl ThreadWorker {
                                 }
                             });
                         }
+
+                        // Periodic throughput log
+                        if processed_count % 500 == 0 {
+                            info!(
+                                "ThreadWorker {}: processed {} txs so far",
+                                worker_id, processed_count
+                            );
+                        }
                     }
                     None => {
-                        break; // Graceful shutdown when channel closes
+                        info!(
+                            "ThreadWorker {}: shutting down after processing {} txs",
+                            worker_id, processed_count
+                        );
+                        break;
                     }
                 }
             }
@@ -130,6 +167,7 @@ impl ExecutionThreadPool {
             thread_workers.push(thread_worker);
         }
 
+        info!("ExecutionThreadPool: created with {} workers", size);
         ExecutionThreadPool { sender, thread_workers }
     }
 
