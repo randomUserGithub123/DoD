@@ -35,12 +35,8 @@ class FairnessLogParser:
                 results = p.map(self._parse_clients, clients)
         except (ValueError, IndexError, AttributeError) as e:
             raise FairnessParseError(f'Failed to parse clients\' logs: {e}')
-        self.size, self.rate, self.start, misses, self.sent_samples, self.received_acks, self.received_acks_count \
-            = zip(*results)
+        self.size, self.rate, self.start, misses, self.sent_samples = zip(*results)
         self.misses = sum(misses)
-
-        print(len(self.sent_samples[0]))
-        # print(self.sent_samples[random.randint(0, len(self.sent_samples)-1)])
 
         # Parse the primaries logs.
         try:
@@ -58,15 +54,23 @@ class FairnessLogParser:
                 results = p.map(self._parse_workers, workers)
         except (ValueError, IndexError, AttributeError) as e:
             raise FairnessParseError(f'Failed to parse workers\' logs: {e}')
-        sizes, self.received_samples, workers_ips, all_batch_maker_tx_uids, all_global_dependency_graph_tx_uids, all_global_order_maker_tx_uids, all_parallel_execution_tx_uids, all_processor_tx_uids = zip(*results)
+        sizes, self.received_samples, workers_ips, all_batch_maker_tx_uids, all_global_dependency_graph_tx_uids, all_global_order_maker_tx_uids, all_parallel_execution_tx_uids, all_processor_tx_uids, all_tx_finalized = zip(*results)
         self.sizes = {
             k: v for x in sizes for k, v in x.items() if k in self.commits
         }
 
+        # Collect all TX_FINALIZED transactions with their timestamps across all workers
+        self.tx_finalized = {}
+        for finalized_dict in all_tx_finalized:
+            for tx_uid, timestamp in finalized_dict.items():
+                # Keep the earliest timestamp for each transaction (in case of duplicates)
+                if tx_uid not in self.tx_finalized or timestamp < self.tx_finalized[tx_uid]:
+                    self.tx_finalized[tx_uid] = timestamp
+        
+        print(f"Number of unique TX_FINALIZED transactions: {len(self.tx_finalized)}")
         print(f"Number of batch maker transactions: {len(all_batch_maker_tx_uids[0])}")
         print(f"Number of processor transactions: {len(all_processor_tx_uids[0])}")
         print(f"Number of global dependency graph transactions: {len(all_global_dependency_graph_tx_uids[0])}")
-        # print("Number of global dependency graph transactions with count >= 4", len([x for x in all_global_dependency_graph_tx_uids[0] if all_global_dependency_graph_tx_uids[0][x] >= 4]))
         print(f"Number of global order maker transactions: {len(all_global_order_maker_tx_uids[0])}")
         print(f"Number of parallel execution transactions: {len(all_parallel_execution_tx_uids[0])}")
 
@@ -75,28 +79,30 @@ class FairnessLogParser:
         worker_gom_tx_uids = all_global_order_maker_tx_uids[0]
         worker_pe_tx_uids = all_parallel_execution_tx_uids[0]
         worker_processor_tx_uids = all_processor_tx_uids[0]
+        worker_tx_finalized = all_tx_finalized[0]
 
         txs_not_found_in_gdg = 0
         txs_not_found_in_gom = 0
         txs_not_found_in_pe = 0
         txs_not_found_in_processor = 0
+        txs_not_found_in_finalized = 0
         for tx_uid in worker_bm_tx_uids:
             if tx_uid not in worker_gdg_tx_uids:
-                # print(f"Transaction {tx_uid} not found in global dependency graph")
                 txs_not_found_in_gdg += 1
             if tx_uid not in worker_gom_tx_uids:
-                # print(f"Transaction {tx_uid} not found in global order maker")
                 txs_not_found_in_gom += 1
             if tx_uid not in worker_pe_tx_uids:
-                # print(f"Transaction {tx_uid} not found in parallel execution")
                 txs_not_found_in_pe += 1
             if tx_uid not in worker_processor_tx_uids:
-                # print(f"Transaction {tx_uid} not found in processor")
                 txs_not_found_in_processor += 1
+            if tx_uid not in worker_tx_finalized:
+                txs_not_found_in_finalized += 1
+        
         print(f"Number of transactions not found in global dependency graph: {txs_not_found_in_gdg}")
         print(f"Number of transactions not found in global order maker: {txs_not_found_in_gom}")
         print(f"Number of transactions not found in parallel execution: {txs_not_found_in_pe}")
         print(f"Number of transactions not found in processor: {txs_not_found_in_processor}")
+        print(f"Number of transactions not found in TX_FINALIZED logs: {txs_not_found_in_finalized}")
 
         # Determine whether the primary and the workers are collocated.
         self.collocate = set(primary_ips) == set(workers_ips)
@@ -131,17 +137,7 @@ class FairnessLogParser:
         tmp = findall(r'\[(.*Z) .* fairness Sending tx (\d+)', log)
         samples = {int(s): self._to_posix(t) for t, s in tmp}
 
-        tmp = findall(r'\[(.*Z) .* fairness Receiving tx ack (\d+)', log)
-        acks = {}
-        for t, s in tmp:
-            s_int = int(s)
-            ts = self._to_posix(t)
-            if s_int not in acks or ts < acks[s_int]:
-                acks[s_int] = ts  # Keep EARLIEST timestamp only
-
-        acks_count = len(acks)
-
-        return size, rate, start, misses, samples, acks, acks_count
+        return size, rate, start, misses, samples
 
     def _parse_primaries(self, log):
         if search(r'(?:panicked|Error)', log) is not None:
@@ -177,12 +173,6 @@ class FairnessLogParser:
             'max_batch_delay': int(
                 search(r'Max batch delay .* (\d+)', log).group(1)
             ),
-            # 'gamma': float(
-            #     search(r'gamma .* (\d+)', log).group(1)
-            # ),
-            # 'execution_threadpool_size': int(
-            #     search(r'execution threadpool size .* (\d+)', log).group(1)
-            # ),
         }
 
         ip = search(r'booted on (\d+.\d+.\d+.\d+)', log).group(1)
@@ -214,9 +204,14 @@ class FairnessLogParser:
         tmp = findall(r'Processor::spawn : tx_uid = (\d+)', log)
         all_processor_tx_uids = {int(s) for s in tmp}
 
+        # Extract TX_FINALIZED logs with timestamps
+        # Format: [2026-02-28T17:02:25.196Z INFO  worker::execution_threadpool] TX_FINALIZED: tx_uid=3329957383421940139
+        tmp = findall(r'\[(.*Z) .* TX_FINALIZED: tx_uid=(\d+)', log)
+        tx_finalized = {int(tx_uid): self._to_posix(timestamp) for timestamp, tx_uid in tmp}
+
         ip = search(r'booted on (\d+.\d+.\d+.\d+)', log).group(1)
 
-        return sizes, samples, ip, all_batch_maker_tx_uids, all_global_dependency_graph_tx_uids, all_global_order_maker_tx_uids, all_parallel_execution_tx_uids, all_processor_tx_uids
+        return sizes, samples, ip, all_batch_maker_tx_uids, all_global_dependency_graph_tx_uids, all_global_order_maker_tx_uids, all_parallel_execution_tx_uids, all_processor_tx_uids, tx_finalized
 
     def _to_posix(self, string):
         x = datetime.fromisoformat(string.replace('Z', '+00:00'))
@@ -230,38 +225,49 @@ class FairnessLogParser:
         return end - start
 
     def _end_to_end_throughput(self):
-        txs = 0
-        bytes = 0
-        duration = []
-        for start_time, acks, count, size in zip(self.start, self.received_acks, self.received_acks_count, self.size):
-            if not acks:
-                return 0, 0, 0
-            end_time = max(acks.values())
-            curr_duration = end_time-start_time
-            txs += count
-            bytes += count * size
-            duration += [curr_duration]
-        return txs/mean(duration), bytes/mean(duration), mean(duration)
+        """Calculate throughput based on TX_FINALIZED transactions"""
+        if not self.tx_finalized:
+            return 0, 0, 0
+        
+        # Count total finalized transactions
+        total_txs = len(self.tx_finalized)
+        
+        # Calculate total bytes (size per transaction * number of transactions)
+        total_bytes = total_txs * self.size[0]
+        
+        # Calculate duration from first client start to last finalization
+        if self.tx_finalized:
+            end_time = max(self.tx_finalized.values())
+            start_time = min(self.start)
+            duration = end_time - start_time if end_time > start_time else 1
+        else:
+            duration = 1
+        
+        return total_txs / duration, total_bytes / duration, duration
 
     def _end_to_end_latency(self):
-        latency = []
-        count = 0
-        for sent, received in zip(self.sent_samples, self.received_acks):
-            for tx_id, end_time in received.items():
-                assert tx_id in sent.keys()
-                start_time = sent[tx_id]
-                latency += [end_time-start_time]
-        print(count, " tx_ids not found in sent")
-        return mean(latency) if latency else 0
+        """Calculate latency from client send to finalization"""
+        latencies = []
+        
+        for client_sent in self.sent_samples:
+            for tx_uid, send_time in client_sent.items():
+                if tx_uid in self.tx_finalized:
+                    finalize_time = self.tx_finalized[tx_uid]
+                    latency = finalize_time - send_time
+                    if latency > 0:  # Only include positive latencies
+                        latencies.append(latency)
+        
+        return mean(latencies) if latencies else 0
 
     def _end_to_end_client_sending_rate(self):
         txs = 0
         max_end_time = 0
         for client_txs in self.sent_samples:
             txs += len(client_txs)
-            max_end_time = max(max_end_time, max(client_txs.values()))
-        duration = max_end_time-min(self.start)
-        return txs/duration
+            if client_txs:
+                max_end_time = max(max_end_time, max(client_txs.values()))
+        duration = max_end_time - min(self.start) if max_end_time > 0 else 1
+        return txs / duration
 
     def result(self):
         header_size = self.configs[0]['header_size']
@@ -271,13 +277,23 @@ class FairnessLogParser:
         sync_retry_nodes = self.configs[0]['sync_retry_nodes']
         batch_size = self.configs[0]['batch_size']
         max_batch_delay = self.configs[0]['max_batch_delay']
-        # gamma = self.configs[0]['gamma']
-        # execution_threadpool_size = self.configs[0]['execution_threadpool_size']
 
         end_to_end_tps, end_to_end_bps, duration = self._end_to_end_throughput()
-        end_to_end_latency = self._end_to_end_latency() * 1_000
+        end_to_end_latency = self._end_to_end_latency() * 1000  # Convert to milliseconds
         client_sending_rate = self._end_to_end_client_sending_rate()
 
+        # Calculate min/max/avg latency if we have data
+        latencies = []
+        for client_sent in self.sent_samples:
+            for tx_uid, send_time in client_sent.items():
+                if tx_uid in self.tx_finalized:
+                    latencies.append((self.tx_finalized[tx_uid] - send_time) * 1000)
+        
+        latency_stats = ""
+        if latencies:
+            latency_stats = f'   Min latency: {round(min(latencies)):,} ms\n' \
+                           f'   Max latency: {round(max(latencies)):,} ms\n' \
+                           f'   Avg latency: {round(mean(latencies)):,} ms\n'
 
         return (
             '\n'
@@ -292,7 +308,7 @@ class FairnessLogParser:
             f' Input rate: {sum(self.rate):,} tx/s\n'
             f' Transaction size: {self.size[0]:,} B\n'
             f' Consensus time: {round(self._consensus_duration()):,} s\n'
-            f' Execution time: {round(duration):,} s\n'
+            f' Execution window: {round(duration):,} s\n'
             '\n'
             f' Header size: {header_size:,} B\n'
             f' Max header delay: {max_header_delay:,} ms\n'
@@ -301,14 +317,14 @@ class FairnessLogParser:
             f' Sync retry nodes: {sync_retry_nodes:,} node(s)\n'
             f' batch size: {batch_size:,} B\n'
             f' Max batch delay: {max_batch_delay:,} ms\n'
-            # f' execution threadpool size: {execution_threadpool_size:,} threads\n'
-            # f' gamma: {gamma:,} \n'
             '\n'
             ' + RESULTS:\n'
+            f' Total finalized transactions: {len(self.tx_finalized):,}\n'
             f' End-to-end TPS: {round(end_to_end_tps):,} tx/s\n'
             f' End-to-end BPS: {round(end_to_end_bps):,} B/s\n'
-            f' End-to-end latency: {round(end_to_end_latency):,} ms\n'
             f' Client Sending Rate: {round(client_sending_rate):,} tx/s\n'
+            f' End-to-end latency: {round(end_to_end_latency):,} ms\n'
+            f'{latency_stats}'
             '-----------------------------------------\n'
         )
 

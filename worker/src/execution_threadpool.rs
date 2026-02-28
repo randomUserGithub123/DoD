@@ -8,6 +8,8 @@ use futures::SinkExt;
 use smallbank::SmallBankTransactionHandler;
 use store::Store;
 use log::{error, info, warn};
+use std::collections::HashSet;
+use std::sync::Mutex as StdMutex;  // Use std::Mutex for the HashSet
 
 /// ThreadWorker struct that represents an async worker.
 /// Only stores the id and handle — all other state is moved into the spawned task.
@@ -25,12 +27,14 @@ impl ThreadWorker {
         writer_store: Arc<futures::lock::Mutex<WriterStore>>,
         sb_handler: SmallBankTransactionHandler,
         tx_done: tokio::sync::mpsc::UnboundedSender<u64>,
+        processed_txs: Arc<StdMutex<HashSet<u64>>>,  // Shared set to track processed transactions
     ) -> ThreadWorker {
         let mut store_clone = store;
         let mut sb_handler_clone = sb_handler;
         let writer_store_clone = Arc::clone(&writer_store);
         let tx_done_clone = tx_done;
         let worker_id = id;
+        let processed_txs_clone = Arc::clone(&processed_txs);
 
         let handle = task::spawn(async move {
             let mut processed_count: u64 = 0;
@@ -86,31 +90,22 @@ impl ThreadWorker {
                             }
                         }
 
-                        // Step 3: Notify completion IMMEDIATELY — before any client IO.
+                        // Step 3: Notify completion IMMEDIATELY
                         let _ = tx_done_clone.send(tx_uid);
 
-                        // Step 4: Send response to client in a fire-and-forget task.
+                        // Step 4: Log TX_FINALIZED if transaction was successful and not already processed
                         if tx_result.is_ok() && tx_result.as_ref().unwrap().is_some() {
-                            let writer_store_for_response = Arc::clone(&writer_store_clone);
-                            let tx_id_vec_for_response = tx_id_vec;
-                            tokio::spawn(async move {
-                                let writer_opt = {
-                                    let mut writer_store_lock = writer_store_for_response.lock().await;
-                                    if writer_store_lock.writer_exists(tx_uid) {
-                                        let writer = writer_store_lock.get_writer(tx_uid);
-                                        writer_store_lock.delete_writer(tx_uid);
-                                        Some(writer)
-                                    } else {
-                                        None
-                                    }
-                                };
-
-                                if let Some(writer) = writer_opt {
-                                    let mut writer_lock = writer.lock().await;
-                                    let _ = writer_lock.send(Bytes::from(tx_id_vec_for_response)).await;
-                                    log::info!("TX_FINALIZED: tx_uid={}", tx_uid);
-                                }
-                            });
+                            // Check if this transaction was already processed
+                            let is_new = {
+                                let mut processed = processed_txs_clone.lock().unwrap();
+                                processed.insert(tx_uid)
+                            };
+                            
+                            if is_new {
+                                info!("TX_FINALIZED: tx_uid={}", tx_uid);
+                            } else {
+                                warn!("TX_FINALIZED: duplicate tx_uid={} detected and skipped", tx_uid);
+                            }
                         }
 
                         // Periodic throughput log
@@ -140,6 +135,7 @@ impl ThreadWorker {
 pub struct ExecutionThreadPool {
     sender: mpsc::Sender<u64>,
     thread_workers: Vec<ThreadWorker>,
+    processed_txs: Arc<StdMutex<HashSet<u64>>>,  // Keep the set for potential cleanup
 }
 
 impl ExecutionThreadPool {
@@ -154,6 +150,9 @@ impl ExecutionThreadPool {
         let (sender, receiver) = mpsc::channel::<u64>(100);
         let receiver = Arc::new(Mutex::new(receiver));
         let mut thread_workers = Vec::with_capacity(size);
+        
+        // Create a shared HashSet to track processed transactions
+        let processed_txs = Arc::new(StdMutex::new(HashSet::new()));
 
         for id in 0..size {
             let thread_worker = ThreadWorker::new(
@@ -163,12 +162,17 @@ impl ExecutionThreadPool {
                 writer_store.clone(),
                 sb_handler.clone(),
                 tx_done.clone(),
+                Arc::clone(&processed_txs),  // Pass the shared set to each worker
             );
             thread_workers.push(thread_worker);
         }
 
         info!("ExecutionThreadPool: created with {} workers", size);
-        ExecutionThreadPool { sender, thread_workers }
+        ExecutionThreadPool { 
+            sender, 
+            thread_workers,
+            processed_txs,  // Store for potential cleanup on shutdown
+        }
     }
 
     /// Sends a message to the worker pool
@@ -181,10 +185,16 @@ impl ExecutionThreadPool {
     /// Graceful shutdown: Wait for all thread_workers to finish
     pub async fn shutdown(self) {
         drop(self.sender); // Close the channel so workers exit their loops
+        
+        // Wait for all workers to complete
         for thread_worker in self.thread_workers {
             if let Err(e) = thread_worker.handle.await {
                 info!("Worker {} encountered an error: {:?}", thread_worker.id, e);
             }
         }
+        
+        // Optional: Log the total number of unique transactions processed
+        let total_processed = self.processed_txs.lock().unwrap().len();
+        info!("ExecutionThreadPool shutdown complete. Total unique transactions processed: {}", total_processed);
     }
 }
