@@ -69,9 +69,9 @@ impl ExecutionQueue {
 
     pub async fn execute(&mut self, digest: Digest){
         // add new element in the queue associated with this new digest
-        // info!("execution STARTS");
+        info!("execution STARTS");
         self.add_to_queue(digest).await;
-        // info!("execution queue length = {:?}", self.queue.len());
+        info!("execution queue length = {:?}", self.queue.len());
 
         // traverse the queue from front and update missing pairs if any
         for element in self.queue.iter_mut() {
@@ -85,7 +85,7 @@ impl ExecutionQueue {
             let mut updated_pairs: Vec<(Node, Node)> = Vec::new();
             let mut updated_edges: Vec<(Node, Node)> = Vec::new();
             for missed_pair in &element.missed_pairs{
-                // info!("ExecutionQueue::execute missed pair = {:?}", missed_pair);
+                info!("ExecutionQueue::execute missed pair = {:?}", missed_pair);
                 let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
                 if let Some(edge) = missed_edge_manager_lock.is_missing_edge_updated(missed_pair.0, missed_pair.1).await {
                     drop(missed_edge_manager_lock);
@@ -118,7 +118,7 @@ impl ExecutionQueue {
             }
         }
         
-        // info!("n_elements_to_execute = {:?}", n_elements_to_execute);
+        info!("n_elements_to_execute = {:?}", n_elements_to_execute);
 
         // remove queue elements and Execute global order if no more missed edges
         for _ in 0..n_elements_to_execute{

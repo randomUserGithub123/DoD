@@ -64,7 +64,7 @@ impl GarbageCollector {
             self.network
                 .broadcast(self.addresses.clone(), Bytes::from(execution_bytes))
                 .await;
-
+            log::info!("GC Broadcast Execute");
 
             let round = certificate.round();
             if round > last_committed_round {
