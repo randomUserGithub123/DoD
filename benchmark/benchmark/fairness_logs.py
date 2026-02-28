@@ -221,6 +221,13 @@ class FairnessLogParser:
     def _to_posix(self, string):
         x = datetime.fromisoformat(string.replace('Z', '+00:00'))
         return datetime.timestamp(x)
+    
+    def _consensus_duration(self):
+        if not self.commits:
+            return 0
+        start = min(self.start)
+        end = max(self.commits.values())
+        return end - start
 
     def _end_to_end_throughput(self):
         txs = 0
@@ -284,6 +291,7 @@ class FairnessLogParser:
             f' Collocate primary and workers: {self.collocate}\n'
             f' Input rate: {sum(self.rate):,} tx/s\n'
             f' Transaction size: {self.size[0]:,} B\n'
+            f' Consensus time: {round(self._consensus_duration()):,} s\n'
             f' Execution time: {round(duration):,} s\n'
             '\n'
             f' Header size: {header_size:,} B\n'
