@@ -198,6 +198,9 @@ impl ParallelExecution {
     pub async fn execute(&mut self) {
         // Find incoming edge count for each node in the graph
         let total_nodes = self.global_order_graph.node_count();
+        if total_nodes == 0 {
+            return;
+        }
         let mut scheduled_count = 0;
     
         let mut in_degree_map: HashMap<Node, usize> = HashMap::new();

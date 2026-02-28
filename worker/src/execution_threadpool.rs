@@ -9,37 +9,33 @@ use smallbank::SmallBankTransactionHandler;
 use store::Store;
 use log::{error, info};
 
-/// ThreadWorker struct that represents an async worker
+/// ThreadWorker struct that represents an async worker.
+/// Only stores the id and handle — all other state is moved into the spawned task.
 struct ThreadWorker {
     id: usize,
     handle: JoinHandle<()>,
-    store: Store,
-    writer_store: Arc<futures::lock::Mutex<WriterStore>>,
-    sb_handler: SmallBankTransactionHandler,
-    tx_done: tokio::sync::mpsc::UnboundedSender<u64>,
 }
 
 impl ThreadWorker {
     /// Starts a worker that listens for messages from the channel
     fn new(
-        id: usize, 
-        receiver: Arc<Mutex<mpsc::Receiver<u64>>>, 
-        mut store: Store,
-        writer_store: Arc<futures::lock::Mutex<WriterStore>>, 
-        mut sb_handler: SmallBankTransactionHandler, 
-        tx_done: tokio::sync::mpsc::UnboundedSender<u64>
+        id: usize,
+        receiver: Arc<Mutex<mpsc::Receiver<u64>>>,
+        store: Store,
+        writer_store: Arc<futures::lock::Mutex<WriterStore>>,
+        sb_handler: SmallBankTransactionHandler,
+        tx_done: tokio::sync::mpsc::UnboundedSender<u64>,
     ) -> ThreadWorker {
-        
-        let mut store_clone = store.clone();
-        let mut sb_handler_clone = sb_handler.clone();
-        let writer_store_clone = Arc::clone(&writer_store); // Clone before move
-        let tx_done_clone = tx_done.clone(); // Clone tx_done before moving
-        
+        let mut store_clone = store;
+        let mut sb_handler_clone = sb_handler;
+        let writer_store_clone = Arc::clone(&writer_store);
+        let tx_done_clone = tx_done;
+
         let handle = task::spawn(async move {
             loop {
                 let msg = {
-                    let mut rx = receiver.lock().await; // Use `await` to get async access
-                    rx.recv().await // Non-blocking receive
+                    let mut rx = receiver.lock().await;
+                    rx.recv().await
                 };
 
                 match msg {
@@ -84,21 +80,13 @@ impl ThreadWorker {
                         let _ = tx_done_clone.send(tx_uid);
                     }
                     None => {
-                        // info!("ThreadWorker {id} shutting down.");
                         break; // Graceful shutdown when channel closes
                     }
                 }
             }
         });
 
-        ThreadWorker { 
-            id, 
-            handle,
-            store,
-            writer_store,
-            sb_handler,
-            tx_done,
-        }
+        ThreadWorker { id, handle }
     }
 }
 
@@ -111,23 +99,23 @@ pub struct ExecutionThreadPool {
 impl ExecutionThreadPool {
     /// Creates a new thread pool with `size` thread_workers
     pub fn new(
-        size: usize, 
+        size: usize,
         store: Store,
-        writer_store: Arc<futures::lock::Mutex<WriterStore>>, 
-        sb_handler: SmallBankTransactionHandler, 
-        tx_done: mpsc::UnboundedSender<u64>
+        writer_store: Arc<futures::lock::Mutex<WriterStore>>,
+        sb_handler: SmallBankTransactionHandler,
+        tx_done: mpsc::UnboundedSender<u64>,
     ) -> ExecutionThreadPool {
-        let (sender, receiver) = mpsc::channel::<u64>(100); // Buffered channel
-        let receiver = Arc::new(Mutex::new(receiver)); // Use `tokio::sync::Mutex`
+        let (sender, receiver) = mpsc::channel::<u64>(100);
+        let receiver = Arc::new(Mutex::new(receiver));
         let mut thread_workers = Vec::with_capacity(size);
 
         for id in 0..size {
             let thread_worker = ThreadWorker::new(
-                id, 
-                Arc::clone(&receiver), 
+                id,
+                Arc::clone(&receiver),
                 store.clone(),
-                writer_store.clone(), 
-                sb_handler.clone(), 
+                writer_store.clone(),
+                sb_handler.clone(),
                 tx_done.clone(),
             );
             thread_workers.push(thread_worker);
@@ -145,7 +133,7 @@ impl ExecutionThreadPool {
 
     /// Graceful shutdown: Wait for all thread_workers to finish
     pub async fn shutdown(self) {
-        drop(self.sender); // Close the channel
+        drop(self.sender); // Close the channel so workers exit their loops
         for thread_worker in self.thread_workers {
             if let Err(e) = thread_worker.handle.await {
                 info!("Worker {} encountered an error: {:?}", thread_worker.id, e);
