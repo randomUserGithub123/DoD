@@ -13,7 +13,7 @@ use crypto::Digest;
 use store::Store;
 use smallbank::SmallBankTransactionHandler;
 use graph::GlobalOrderGraph;
-use log::{error, info};
+use log::{error, info, warn};
 use petgraph::Direction::Incoming;
 use tokio::time::Instant;
 
@@ -207,10 +207,21 @@ impl ParallelExecution {
         let exec_start = Instant::now();
         let total_nodes = self.global_order_graph.node_count();
         let total_edges = self.global_order_graph.edge_count();
-        let mut scheduled_count = 0;
-    
+
         info!("TRACE_PE: execute START total_nodes={} total_edges={} threadpool_size={}", total_nodes, total_edges, self.execution_threadpool_size);
 
+        // ============================================================
+        // FIX #1: Early return for empty graphs.
+        // Previously this fell through to rx_done.recv().await which
+        // blocked forever because no worker ever sends on the channel.
+        // ============================================================
+        if total_nodes == 0 {
+            info!("TRACE_PE: execute EMPTY_GRAPH — nothing to do, returning immediately");
+            return;
+        }
+
+        let mut scheduled_count: usize = 0;
+    
         let mut in_degree_map: HashMap<Node, usize> = HashMap::new();
         for node in self.global_order_graph.nodes() {
             in_degree_map.insert(node, self.global_order_graph.edges_directed(node, Incoming).count());
@@ -220,15 +231,12 @@ impl ParallelExecution {
         info!("TRACE_PE: execute in_degree_map built, zero_indeg_nodes={}", zero_indeg_count);
 
         let (tx_done, mut rx_done) = mpsc::unbounded_channel::<u64>();
-        let tx_done_clone = tx_done.clone();
     
         let thread_pool_size = self.execution_threadpool_size as usize;
         let store_clone = self.store.clone();
         let writer_store_clone = self.writer_store.clone();
         let sb_handler_clone = self.sb_handler.clone(); 
     
-        info!("TRACE_PE: execute creating thread pool size={}", thread_pool_size);
-        let pool_start = Instant::now();
         let thread_pool = ExecutionThreadPool::new(
             thread_pool_size,
             store_clone,
@@ -236,71 +244,97 @@ impl ParallelExecution {
             sb_handler_clone,
             tx_done,
         );
-        info!("TRACE_PE: execute thread pool created in {:?}", pool_start.elapsed());
 
-        // Spawn tasks for nodes with in-degree 0
-        {
-            for (node, in_degree) in &in_degree_map {
-                if *in_degree == 0 {
-                    scheduled_count += 1;
-                    thread_pool.send_message(*node).await;
-                }
+        // Track which nodes have been scheduled so we never double-schedule
+        let mut scheduled_set: HashSet<Node> = HashSet::with_capacity(total_nodes);
+
+        // Schedule all nodes with in-degree 0
+        for (node, in_degree) in &in_degree_map {
+            if *in_degree == 0 {
+                scheduled_count += 1;
+                scheduled_set.insert(*node);
+                thread_pool.send_message(*node).await;
             }
         }
         info!("TRACE_PE: execute scheduled {} initial zero-indeg nodes", scheduled_count);
 
-        if scheduled_count == 0 && total_nodes > 0 {
-            error!("TRACE_PE: BUG! No zero-indegree nodes but graph has {} nodes — possible cycle!", total_nodes);
+        if scheduled_count == 0 {
+            error!("TRACE_PE: CYCLE_DETECTED no zero-indegree nodes in graph with {} nodes!", total_nodes);
+            thread_pool.shutdown().await;
+            return;
         }
 
-        let mut completed_count = 0;
-        loop {
-            info!("TRACE_PE: execute waiting on rx_done completed={}/{} scheduled={}", completed_count, total_nodes, scheduled_count);
-            let recv_start = Instant::now();
+        let mut completed_count: usize = 0;
+        let mut completed_set: HashSet<Node> = HashSet::with_capacity(total_nodes);
 
-            let completed_id = match rx_done.recv().await {
-                Some(id) => {
-                    info!("TRACE_PE: execute rx_done received tx_uid={} wait_time={:?}", id, recv_start.elapsed());
-                    id
-                },
-                None => {
-                    error!("TRACE_PE: execute rx_done channel CLOSED unexpectedly! completed={}/{}", completed_count, total_nodes);
-                    break;
-                }
-            };
-
+        while let Some(completed_id) = rx_done.recv().await {
             completed_count += 1;
+            completed_set.insert(completed_id);
+
+            // All nodes done — normal exit
             if completed_count == total_nodes {
-                info!("TRACE_PE: execute all {} nodes completed", total_nodes);
+                info!("TRACE_PE: execute ALL_COMPLETE completed={}/{}", completed_count, total_nodes);
                 break;
             }
     
-            let mut flag = false;
-            if completed_count == scheduled_count {
-                flag = true;
-                info!("TRACE_PE: execute caught_up: completed==scheduled=={}", completed_count);
-            }
-    
-            let mut newly_scheduled = 0;
+            // Decrement in-degree for neighbors and schedule any that become ready
             for neighbor in self.global_order_graph.neighbors(completed_id) {
-                in_degree_map.entry(neighbor).and_modify(|degree| *degree -= 1);
+                if completed_set.contains(&neighbor) || scheduled_set.contains(&neighbor) {
+                    // Already done or already in flight — skip
+                    // (can happen with diamond dependencies)
+                    continue;
+                }
+                in_degree_map.entry(neighbor).and_modify(|degree| {
+                    if *degree > 0 { *degree -= 1; }
+                });
                 if *in_degree_map.get(&neighbor).unwrap() == 0 {
                     scheduled_count += 1;
-                    newly_scheduled += 1;
+                    scheduled_set.insert(neighbor);
                     thread_pool.send_message(neighbor).await;
                 }
             }
-            if newly_scheduled > 0 {
-                info!("TRACE_PE: execute after tx_uid={}: newly_scheduled={} total_scheduled={}", completed_id, newly_scheduled, scheduled_count);
-            }
 
-            if flag && completed_count == scheduled_count {
-                info!("TRACE_PE: execute EARLY EXIT: no more work, completed={} scheduled={} total_nodes={}", completed_count, scheduled_count, total_nodes);
-                break;
+            // ============================================================
+            // FIX #2: Handle disconnected components properly.
+            // When we've drained all reachable work but nodes remain,
+            // scan for nodes with in-degree 0 that belong to disconnected
+            // components and schedule them. This replaces the old early
+            // exit that silently dropped ~50% of transactions.
+            // ============================================================
+            if completed_count == scheduled_count && completed_count < total_nodes {
+                let mut found_new = 0;
+                for (node, deg) in &in_degree_map {
+                    if *deg == 0 && !completed_set.contains(node) && !scheduled_set.contains(node) {
+                        scheduled_count += 1;
+                        found_new += 1;
+                        scheduled_set.insert(*node);
+                        thread_pool.send_message(*node).await;
+                    }
+                }
+
+                if found_new > 0 {
+                    warn!("TRACE_PE: DISCONNECTED_COMPONENT found {} new root nodes, total_scheduled={} completed={} total_nodes={}",
+                        found_new, scheduled_count, completed_count, total_nodes);
+                } else {
+                    // No new zero-indegree nodes — remaining nodes form cycles
+                    error!("TRACE_PE: CYCLE_DETECTED {} unreachable nodes remain, completed={}/{}", 
+                        total_nodes - completed_count, completed_count, total_nodes);
+                    break;
+                }
             }
         }
-    
-        info!("TRACE_PE: execute shutting down thread pool, completed={}/{} elapsed={:?}", completed_count, total_nodes, exec_start.elapsed());
+
+        // Final correctness summary
+        let dropped = total_nodes - completed_count;
+        if dropped > 0 {
+            error!("TRACE_PE: COMPLETION_STATS total_nodes={} completed={} DROPPED={} scheduled={}", 
+                total_nodes, completed_count, dropped, scheduled_count);
+        } else {
+            info!("TRACE_PE: COMPLETION_STATS total_nodes={} completed={} dropped=0 scheduled={}", 
+                total_nodes, completed_count, scheduled_count);
+        }
+
+        info!("TRACE_PE: execute shutting down thread pool, elapsed={:?}", exec_start.elapsed());
         let shutdown_start = Instant::now();
         thread_pool.shutdown().await;
         info!("TRACE_PE: execute thread pool shutdown DONE in {:?}, total_elapsed={:?}", shutdown_start.elapsed(), exec_start.elapsed());
