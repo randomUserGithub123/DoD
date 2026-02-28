@@ -93,7 +93,9 @@ impl Synchronizer {
         let mut exe_queue_clone = exe_queue.clone();
         tokio::spawn(async move {
             while let Some(digest) = rx_execution.recv().await {
+                info!("EXEC START: {:?}", digest);
                 exe_queue_clone.execute(digest).await;
+                info!("EXEC END: {:?}", digest);
             }
         });
 
