@@ -65,6 +65,7 @@ impl GarbageCollector {
                 .broadcast(self.addresses.clone(), Bytes::from(execution_bytes))
                 .await;
 
+            info!("GC Execute Sent");
 
             let round = certificate.round();
             if round > last_committed_round {
