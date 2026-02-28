@@ -124,6 +124,9 @@ def das(ctx, debug=False, username='mputnik'):
                     username
                 ).run(debug)
 
+                if ret._consensus_duration() == 0:
+                    continue
+
                 print(ret.result())
                 ret.print(filename)
                 run += 1
