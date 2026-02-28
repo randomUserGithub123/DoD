@@ -35,7 +35,7 @@ use std::clone::Clone;
 pub mod worker_tests;
 
 /// The default channel capacity for each channel of the worker.
-pub const CHANNEL_CAPACITY: usize = 1_000;
+pub const CHANNEL_CAPACITY: usize = 100_000;
 
 /// The primary round number.
 // TODO: Move to the primary.
@@ -458,15 +458,15 @@ struct PrimaryReceiverHandler {
 impl MessageHandler for PrimaryReceiverHandler {
     async fn dispatch(
         &self,
-        writer: Arc<Mutex<Writer>>,
+        _writer: Arc<Mutex<Writer>>,
         serialized: Bytes,
     ) -> Result<(), Box<dyn Error>> {
         // Deserialize the message and send it to the synchronizer.
 
-        {
-            let mut shareable_writer = writer.lock().await;
-            let _ = shareable_writer.send(Bytes::from("Ack")).await;
-        }
+        // {
+        //     let mut shareable_writer = writer.lock().await;
+        //     let _ = shareable_writer.send(Bytes::from("Ack")).await;
+        // }
 
         match bincode::deserialize(&serialized) {
             Err(e) => error!("Failed to deserialize primary message: {}", e),

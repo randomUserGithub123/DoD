@@ -13,7 +13,7 @@ use worker::Worker;
 use smallbank::SmallBankTransactionHandler;
 
 /// The default channel capacity.
-pub const CHANNEL_CAPACITY: usize = 1_000;
+pub const CHANNEL_CAPACITY: usize = 100_000;
 
 #[tokio::main]
 async fn main() -> Result<()> {
