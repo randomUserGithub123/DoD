@@ -4,12 +4,12 @@ use crate::primary::PrimaryWorkerMessage;
 use bytes::Bytes;
 use config::Committee;
 use crypto::PublicKey;
-use network::SimpleSender;
+use network::ReliableSender;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Receiver;
-use log::{info};
+use log::info;
 
 /// Receives the highest round reached by consensus and update it for all tasks.
 pub struct GarbageCollector {
@@ -20,7 +20,7 @@ pub struct GarbageCollector {
     /// The network addresses of our workers.
     addresses: Vec<SocketAddr>,
     /// A network sender to notify our workers of cleanup events.
-    network: SimpleSender,
+    network: ReliableSender,
 }
 
 impl GarbageCollector {
@@ -42,7 +42,7 @@ impl GarbageCollector {
                 consensus_round,
                 rx_consensus,
                 addresses,
-                network: SimpleSender::new(),
+                network: ReliableSender::new(),
             }
             .run()
             .await;
@@ -52,18 +52,19 @@ impl GarbageCollector {
     async fn run(&mut self) {
         let mut last_committed_round = 0;
         while let Some(certificate) = self.rx_consensus.recv().await {
-            // TODO [issue #9]: Re-include batch digests that have not been sequenced into our next block.
+            let mut cancel_handlers = Vec::new();
 
-            // for digest in certificate.header.payload.keys() {
-            //     info!("sequenced digest = {:?} for execution", *digest);
-            // }
-
-            // Channel ordering towards workers
-            let execution_bytes = bincode::serialize(&PrimaryWorkerMessage::Execute(certificate.clone()))
-                .expect("Failed to serialize execution message");
-            self.network
-                .broadcast(self.addresses.clone(), Bytes::from(execution_bytes))
-                .await;
+            // Send Execute to all workers
+            let execution_bytes =
+                bincode::serialize(&PrimaryWorkerMessage::Execute(certificate.clone()))
+                    .expect("Failed to serialize execution message");
+            for address in &self.addresses {
+                let handler = self
+                    .network
+                    .send(*address, Bytes::from(execution_bytes.clone()))
+                    .await;
+                cancel_handlers.push(handler);
+            }
 
             info!("GC Broadcast Execute");
 
@@ -74,13 +75,20 @@ impl GarbageCollector {
                 // Trigger cleanup on the primary.
                 self.consensus_round.store(round, Ordering::Relaxed);
 
-                // Trigger cleanup on the workers..
+                // Trigger cleanup on the workers.
                 let bytes = bincode::serialize(&PrimaryWorkerMessage::Cleanup(round))
                     .expect("Failed to serialize our own message");
-                self.network
-                    .broadcast(self.addresses.clone(), Bytes::from(bytes))
-                    .await;
+                for address in &self.addresses {
+                    let handler = self
+                        .network
+                        .send(*address, Bytes::from(bytes.clone()))
+                        .await;
+                    cancel_handlers.push(handler);
+                }
             }
+
+            // Wait for all messages to be acknowledged before processing next certificate
+            futures::future::join_all(cancel_handlers).await;
         }
     }
 }
