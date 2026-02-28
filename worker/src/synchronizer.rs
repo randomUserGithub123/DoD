@@ -130,12 +130,13 @@ impl Synchronizer {
         let timer = sleep(Duration::from_millis(TIMER_RESOLUTION));
         tokio::pin!(timer);
 
+        info!("TRACE_SYNC: synchronizer run loop starting");
+
         loop {
             tokio::select! {
                 // Handle primary's messages.
                 Some(message) = self.rx_message.recv() => match message {
                     PrimaryWorkerMessage::Synchronize(digests, target) => {
-                        // info!("Received PrimaryWorkerMessage::Synchronize request for digests = {:?}", digests);
                         let now = SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .expect("Failed to measure time")
@@ -171,8 +172,6 @@ impl Synchronizer {
                             self.pending.insert(digest, (self.round, tx_cancel, now));
                         }
 
-                        // Send sync request to a single node. If this fails, we will send it
-                        // to other nodes when a timer times out.
                         let address = match self.committee.worker(&target, &self.id) {
                             Ok(address) => address.worker_to_worker,
                             Err(e) => {
@@ -186,17 +185,24 @@ impl Synchronizer {
                     },
 
                     PrimaryWorkerMessage::Execute(certificate) => {
-                        info!("PrimaryWorkerMessage::Execute START");
-                        for digest in certificate.header.payload.keys() {
+                        let execute_start = Instant::now();
+                        let round = certificate.round();
+                        let num_digests = certificate.header.payload.len();
+                        info!("TRACE_SYNC: Execute START for round={} num_digests={}", round, num_digests);
+
+                        for (i, digest) in certificate.header.payload.keys().enumerate() {
+                            info!("TRACE_SYNC: Execute digest {}/{} digest={:?} round={}", i+1, num_digests, digest, round);
+                            let digest_start = Instant::now();
                             self.exe_queue.execute(*digest).await;
+                            info!("TRACE_SYNC: Execute digest {}/{} DONE in {:?} round={}", i+1, num_digests, digest_start.elapsed(), round);
                         }
+
+                        info!("TRACE_SYNC: Execute ALL DONE for round={} total_time={:?}", round, execute_start.elapsed());
                     },
                     
                     PrimaryWorkerMessage::Cleanup(round) => {
-                        // Keep track of the primary's round number.
                         self.round = round;
 
-                        // Cleanup internal state.
                         if self.round < self.gc_depth {
                             continue;
                         }
@@ -210,9 +216,8 @@ impl Synchronizer {
                         self.pending.retain(|_, (r, _, _)| r > &mut gc_round);
                     }
 
-                    // TODO: Receive global order round from Primary
                     PrimaryWorkerMessage::AdvanceRound(round) => {
-                        // info!("AdvanceRound received from Primary::Proposer = {:?}", round);
+                        info!("TRACE_SYNC: AdvanceRound received round={}", round);
                         self.tx_batch_round
                             .send(round)
                             .await
@@ -224,23 +229,16 @@ impl Synchronizer {
                     }
                 },
 
-                // Stream out the futures of the `FuturesUnordered` that completed.
                 Some(result) = waiting.next() => match result {
                     Ok(Some(digest)) => {
-                        // We got the batch, remove it from the pending list.
                         self.pending.remove(&digest);
                     },
                     Ok(None) => {
-                        // The sync request for this batch has been canceled.
                     },
                     Err(e) => error!("{}", e)
                 },
 
-                // Triggers on timer's expiration.
                 () = &mut timer => {
-                    // We optimistically sent sync requests to a single node. If this timer triggers,
-                    // it means we were wrong to trust it. We are done waiting for a reply and we now
-                    // broadcast the request to a bunch of other nodes (selected at random).
                     let now = SystemTime::now()
                         .duration_since(UNIX_EPOCH)
                         .expect("Failed to measure time")
@@ -265,7 +263,6 @@ impl Synchronizer {
                             .await;
                     }
 
-                    // Reschedule the timer.
                     timer.as_mut().reset(Instant::now() + Duration::from_millis(TIMER_RESOLUTION));
                 },
             }
