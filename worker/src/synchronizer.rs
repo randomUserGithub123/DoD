@@ -7,11 +7,10 @@ use config::{Committee, WorkerId};
 use crypto::{Digest, PublicKey};
 use futures::stream::futures_unordered::FuturesUnordered;
 use futures::stream::StreamExt as _;
-// use futures::SinkExt;
-use std::sync::{Arc};
+use std::sync::Arc;
 use futures::lock::Mutex;
 use log::{debug, error, info};
-use network::{SimpleSender};
+use network::SimpleSender;
 use primary::PrimaryWorkerMessage;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -26,6 +25,9 @@ pub mod synchronizer_tests;
 
 /// Resolution of the timer managing retrials of sync requests (in ms).
 const TIMER_RESOLUTION: u64 = 1_000;
+
+/// Channel capacity for the execution digest channel.
+const EXECUTION_CHANNEL_CAPACITY: usize = 100_000;
 
 // The `Synchronizer` is responsible to keep the worker in sync with the others.
 pub struct Synchronizer {
@@ -54,6 +56,8 @@ pub struct Synchronizer {
     tx_batch_round: Sender<Round>,
     /// Output channel to send the new round for a global order creation when advanced
     tx_global_order_round: Sender<Round>,
+    /// Channel to send digests to the dedicated execution task.
+    tx_execution: Sender<Digest>,
     /// A network sender to send requests to the other workers.
     network: SimpleSender,
     /// Loosely keep track of the primary's round number (only used for cleanup).
@@ -62,8 +66,6 @@ pub struct Synchronizer {
     /// processing will resume when we get the missing batches in the store or we no longer need them.
     /// It also keeps the round number and a timestamp (`u128`) of each request we sent.
     pending: HashMap<Digest, (Round, Sender<()>, u128)>,
-    /// Keeping track of the elements in the Execution Queue (on worker)
-    exe_queue: ExecutionQueue,
 }
 
 impl Synchronizer {
@@ -83,6 +85,18 @@ impl Synchronizer {
         tx_batch_round: Sender<Round>,
         tx_global_order_round: Sender<Round>,
     ) {
+        // Create a channel for sending digests to the dedicated execution task.
+        let (tx_execution, mut rx_execution) = channel::<Digest>(EXECUTION_CHANNEL_CAPACITY);
+
+        // Spawn a dedicated execution task that processes digests sequentially
+        // without blocking the synchronizer's select! loop.
+        let mut exe_queue_clone = exe_queue.clone();
+        tokio::spawn(async move {
+            while let Some(digest) = rx_execution.recv().await {
+                exe_queue_clone.execute(digest).await;
+            }
+        });
+
         tokio::spawn(async move {
             Self {
                 name,
@@ -97,10 +111,10 @@ impl Synchronizer {
                 rx_message,
                 tx_batch_round,
                 tx_global_order_round,
+                tx_execution,
                 network: SimpleSender::new(),
                 round: Round::default(),
                 pending: HashMap::new(),
-                exe_queue,
             }
             .run()
             .await;
@@ -135,7 +149,6 @@ impl Synchronizer {
                 // Handle primary's messages.
                 Some(message) = self.rx_message.recv() => match message {
                     PrimaryWorkerMessage::Synchronize(digests, target) => {
-                        // info!("Received PrimaryWorkerMessage::Synchronize request for digests = {:?}", digests);
                         let now = SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .expect("Failed to measure time")
@@ -188,10 +201,12 @@ impl Synchronizer {
                     PrimaryWorkerMessage::Execute(certificate) => {
                         info!("PrimaryWorkerMessage::Execute START");
                         for digest in certificate.header.payload.keys() {
-                            self.exe_queue.execute(*digest).await;
+                            if let Err(e) = self.tx_execution.send(*digest).await {
+                                error!("Failed to send digest to execution task: {}", e);
+                            }
                         }
                     },
-                    
+
                     PrimaryWorkerMessage::Cleanup(round) => {
                         // Keep track of the primary's round number.
                         self.round = round;
@@ -210,9 +225,8 @@ impl Synchronizer {
                         self.pending.retain(|_, (r, _, _)| r > &mut gc_round);
                     }
 
-                    // TODO: Receive global order round from Primary
+                    // Receive round advance from Primary
                     PrimaryWorkerMessage::AdvanceRound(round) => {
-                        // info!("AdvanceRound received from Primary::Proposer = {:?}", round);
                         self.tx_batch_round
                             .send(round)
                             .await
@@ -220,7 +234,7 @@ impl Synchronizer {
                         self.tx_global_order_round
                             .send(round)
                             .await
-                            .expect("Failed to deliver new global order round");   
+                            .expect("Failed to deliver new global order round");
                     }
                 },
 
