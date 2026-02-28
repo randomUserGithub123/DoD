@@ -4,12 +4,12 @@ use crate::primary::PrimaryWorkerMessage;
 use bytes::Bytes;
 use config::Committee;
 use crypto::PublicKey;
-use network::ReliableSender;
+use network::SimpleSender;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Receiver;
-use log::info;
+use log::{info};
 
 /// Receives the highest round reached by consensus and update it for all tasks.
 pub struct GarbageCollector {
@@ -20,7 +20,7 @@ pub struct GarbageCollector {
     /// The network addresses of our workers.
     addresses: Vec<SocketAddr>,
     /// A network sender to notify our workers of cleanup events.
-    network: ReliableSender,
+    network: SimpleSender,
 }
 
 impl GarbageCollector {
@@ -42,7 +42,7 @@ impl GarbageCollector {
                 consensus_round,
                 rx_consensus,
                 addresses,
-                network: ReliableSender::new(),
+                network: SimpleSender::new(),
             }
             .run()
             .await;
@@ -54,11 +54,14 @@ impl GarbageCollector {
         while let Some(certificate) = self.rx_consensus.recv().await {
             // TODO [issue #9]: Re-include batch digests that have not been sequenced into our next block.
 
+            // for digest in certificate.header.payload.keys() {
+            //     info!("sequenced digest = {:?} for execution", *digest);
+            // }
+
             // Channel ordering towards workers
             let execution_bytes = bincode::serialize(&PrimaryWorkerMessage::Execute(certificate.clone()))
                 .expect("Failed to serialize execution message");
-        
-            let _handles = self.network
+            self.network
                 .broadcast(self.addresses.clone(), Bytes::from(execution_bytes))
                 .await;
 
@@ -71,10 +74,10 @@ impl GarbageCollector {
                 // Trigger cleanup on the primary.
                 self.consensus_round.store(round, Ordering::Relaxed);
 
-                // Trigger cleanup on the workers.
+                // Trigger cleanup on the workers..
                 let bytes = bincode::serialize(&PrimaryWorkerMessage::Cleanup(round))
                     .expect("Failed to serialize our own message");
-                let _handles = self.network
+                self.network
                     .broadcast(self.addresses.clone(), Bytes::from(bytes))
                     .await;
             }

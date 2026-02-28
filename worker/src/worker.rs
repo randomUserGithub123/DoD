@@ -463,10 +463,10 @@ impl MessageHandler for PrimaryReceiverHandler {
     ) -> Result<(), Box<dyn Error>> {
         // Deserialize the message and send it to the synchronizer.
 
-        {
-            let mut shareable_writer = writer.lock().await;
-            let _ = shareable_writer.send(Bytes::from("Ack")).await;
-        }
+        // {
+        //     let mut shareable_writer = writer.lock().await;
+        //     let _ = shareable_writer.send(Bytes::from("Ack")).await;
+        // }
 
         match bincode::deserialize(&serialized) {
             Err(e) => error!("Failed to deserialize primary message: {}", e),
