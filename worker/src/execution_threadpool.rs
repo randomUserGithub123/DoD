@@ -42,31 +42,13 @@ impl ThreadWorker {
                     Some(tx_uid) => {
                         let tx_id_vec = tx_uid.to_be_bytes().to_vec();
 
-                        // First: read the transaction from the store WITHOUT holding writer_store_lock
+                        // Step 1: Read the transaction from the store
                         let tx_result = store_clone.read(tx_id_vec.clone()).await;
 
-                        match tx_result {
+                        // Step 2: Execute the transaction
+                        match &tx_result {
                             Ok(Some(tx)) => {
-                                sb_handler_clone.execute_transaction(Bytes::from(tx));
-
-                                // Only now check if a client writer exists for this tx
-                                let writer_opt = {
-                                    let mut writer_store_lock = writer_store_clone.lock().await;
-                                    if writer_store_lock.writer_exists(tx_uid) {
-                                        let writer = writer_store_lock.get_writer(tx_uid);
-                                        writer_store_lock.delete_writer(tx_uid);
-                                        Some(writer)
-                                    } else {
-                                        None
-                                    }
-                                    // writer_store_lock dropped here
-                                };
-
-                                if let Some(writer) = writer_opt {
-                                    let mut writer_lock = writer.lock().await;
-                                    let _ = writer_lock.send(Bytes::from(tx_id_vec)).await;
-                                    log::info!("TX_FINALIZED: tx_uid={}", tx_uid);
-                                }
+                                sb_handler_clone.execute_transaction(Bytes::from(tx.clone()));
                             }
                             Ok(None) => {
                                 error!("ThreadWorker :: Cannot find tx_uid = {:?} in the store", tx_uid);
@@ -76,8 +58,35 @@ impl ThreadWorker {
                             }
                         }
 
-                        // ALWAYS notify completion regardless of success/failure
+                        // Step 3: Notify completion IMMEDIATELY — before any client IO.
+                        // This is critical: if the client writer hangs (slow/disconnected client),
+                        // it must NEVER block the execution pipeline.
                         let _ = tx_done_clone.send(tx_uid);
+
+                        // Step 4: Send response to client in a fire-and-forget task.
+                        // This runs independently — a stuck TCP connection cannot block the worker.
+                        if tx_result.is_ok() && tx_result.as_ref().unwrap().is_some() {
+                            let writer_store_for_response = Arc::clone(&writer_store_clone);
+                            let tx_id_vec_for_response = tx_id_vec;
+                            tokio::spawn(async move {
+                                let writer_opt = {
+                                    let mut writer_store_lock = writer_store_for_response.lock().await;
+                                    if writer_store_lock.writer_exists(tx_uid) {
+                                        let writer = writer_store_lock.get_writer(tx_uid);
+                                        writer_store_lock.delete_writer(tx_uid);
+                                        Some(writer)
+                                    } else {
+                                        None
+                                    }
+                                };
+
+                                if let Some(writer) = writer_opt {
+                                    let mut writer_lock = writer.lock().await;
+                                    let _ = writer_lock.send(Bytes::from(tx_id_vec_for_response)).await;
+                                    log::info!("TX_FINALIZED: tx_uid={}", tx_uid);
+                                }
+                            });
+                        }
                     }
                     None => {
                         break; // Graceful shutdown when channel closes
