@@ -458,7 +458,7 @@ struct PrimaryReceiverHandler {
 impl MessageHandler for PrimaryReceiverHandler {
     async fn dispatch(
         &self,
-        _writer: Arc<Mutex<Writer>>,
+        writer: Arc<Mutex<Writer>>,
         serialized: Bytes,
     ) -> Result<(), Box<dyn Error>> {
         // Deserialize the message and send it to the synchronizer.
