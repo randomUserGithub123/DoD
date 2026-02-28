@@ -458,15 +458,15 @@ struct PrimaryReceiverHandler {
 impl MessageHandler for PrimaryReceiverHandler {
     async fn dispatch(
         &self,
-        _writer: Arc<Mutex<Writer>>,
+        writer: Arc<Mutex<Writer>>,
         serialized: Bytes,
     ) -> Result<(), Box<dyn Error>> {
         // Deserialize the message and send it to the synchronizer.
 
-        // {
-        //     let mut shareable_writer = writer.lock().await;
-        //     let _ = shareable_writer.send(Bytes::from("Ack")).await;
-        // }
+        {
+            let mut shareable_writer = writer.lock().await;
+            let _ = shareable_writer.send(Bytes::from("Ack")).await;
+        }
 
         match bincode::deserialize(&serialized) {
             Err(e) => error!("Failed to deserialize primary message: {}", e),
