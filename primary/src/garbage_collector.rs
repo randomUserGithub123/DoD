@@ -61,9 +61,14 @@ impl GarbageCollector {
             // Channel ordering towards workers
             let execution_bytes = bincode::serialize(&PrimaryWorkerMessage::Execute(certificate.clone()))
                 .expect("Failed to serialize execution message");
-            self.network
-                .broadcast(self.addresses.clone(), Bytes::from(execution_bytes))
-                .await;
+            for address in &self.addresses {
+                self.network
+                    .send(*address, Bytes::from(execution_bytes.clone()))
+                    .await;
+            }
+            // self.network
+            //     .broadcast(self.addresses.clone(), Bytes::from(execution_bytes))
+            //     .await;
             log::info!("GC Broadcast Execute");
 
             let round = certificate.round();
@@ -76,9 +81,14 @@ impl GarbageCollector {
                 // Trigger cleanup on the workers..
                 let bytes = bincode::serialize(&PrimaryWorkerMessage::Cleanup(round))
                     .expect("Failed to serialize our own message");
-                self.network
-                    .broadcast(self.addresses.clone(), Bytes::from(bytes))
-                    .await;
+                for address in &self.addresses {
+                    self.network
+                        .send(*address, Bytes::from(bytes.clone()))
+                        .await;
+                }
+                // self.network
+                //     .broadcast(self.addresses.clone(), Bytes::from(bytes))
+                //     .await;
             }
         }
     }
