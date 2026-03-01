@@ -90,13 +90,13 @@ impl ExecutionQueue {
             let mut updated_pairs: Vec<(Node, Node)> = Vec::new();
             let mut updated_edges: Vec<(Node, Node)> = Vec::new();
             let num_missed = element.missed_pairs.len();
-            info!("TRACE_EQ: execute checking missed_pairs for queue_idx={} num_missed={}", queue_idx, num_missed);
+            // info!("TRACE_EQ: execute checking missed_pairs for queue_idx={} num_missed={}", queue_idx, num_missed);
 
             for missed_pair in &element.missed_pairs{
-                info!("TRACE_EQ: execute locking missed_edge_manager for pair=({}, {})", missed_pair.0, missed_pair.1);
+                // info!("TRACE_EQ: execute locking missed_edge_manager for pair=({}, {})", missed_pair.0, missed_pair.1);
                 let lock_start = Instant::now();
                 let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
-                info!("TRACE_EQ: execute got missed_edge_manager lock in {:?}", lock_start.elapsed());
+                // info!("TRACE_EQ: execute got missed_edge_manager lock in {:?}", lock_start.elapsed());
 
                 if let Some(edge) = missed_edge_manager_lock.is_missing_edge_updated(missed_pair.0, missed_pair.1).await {
                     drop(missed_edge_manager_lock);
@@ -133,24 +133,24 @@ impl ExecutionQueue {
         for exec_idx in 0..n_elements_to_execute{
             let queue_element: QueueElement = self.queue.pop_front().unwrap();
 
-            info!("TRACE_EQ: execute element {}/{} reading store for digest={:?}", exec_idx+1, n_elements_to_execute, queue_element.global_order_digest);
+            // info!("TRACE_EQ: execute element {}/{} reading store for digest={:?}", exec_idx+1, n_elements_to_execute, queue_element.global_order_digest);
             let store_read_start = Instant::now();
 
             match self.store.read(queue_element.global_order_digest.to_vec()).await {
                 Ok(Some(global_order_info)) => {
-                    info!("TRACE_EQ: execute store.read OK in {:?}", store_read_start.elapsed());
+                    // info!("TRACE_EQ: execute store.read OK in {:?}", store_read_start.elapsed());
                     match bincode::deserialize(&global_order_info).unwrap() {
                         WorkerMessage::GlobalOrderInfo(global_order_graph_serialized, _missed) => {
                             let deser_start = Instant::now();
                             let dag: DiGraphMap<Node, u8> = GlobalOrderGraph::get_dag_deserialized(global_order_graph_serialized);
                             
-                            log::info!("FINALIZED!: {} (deserialized in {:?})", dag.node_count(), deser_start.elapsed());
+                            // log::info!("FINALIZED!: {} (deserialized in {:?})", dag.node_count(), deser_start.elapsed());
                             
-                            info!("TRACE_EQ: execute launching ParallelExecution node_count={} edge_count={}", dag.node_count(), dag.edge_count());
+                            // info!("TRACE_EQ: execute launching ParallelExecution node_count={} edge_count={}", dag.node_count(), dag.edge_count());
                             let par_start = Instant::now();
                             let mut parallel_execution: ParallelExecution = ParallelExecution::new(dag, self.store.clone(), self.writer_store.clone(), self.sb_handler.clone(), self.execution_threadpool_size);
                             parallel_execution.execute().await;
-                            info!("TRACE_EQ: execute ParallelExecution DONE in {:?}", par_start.elapsed());
+                            // info!("TRACE_EQ: execute ParallelExecution DONE in {:?}", par_start.elapsed());
                         },
                         _ => panic!("PrimaryWorkerMessage::Execute : Unexpected global order graph at execution"),
                     }
@@ -270,9 +270,6 @@ impl ParallelExecution {
         while let Some(completed_id) = rx_done.recv().await {
             completed_count += 1;
             completed_set.insert(completed_id);
-
-            info!("TRACE_PE: completed tx_uid={} completed={}/{} scheduled={} elapsed={:?}", 
-                completed_id, completed_count, total_nodes, scheduled_count, exec_start.elapsed());
 
             // All nodes done — normal exit
             if completed_count == total_nodes {

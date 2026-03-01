@@ -137,7 +137,6 @@ impl Synchronizer {
                 // Handle primary's messages.
                 Some(message) = self.rx_message.recv() => match message {
                     PrimaryWorkerMessage::Synchronize(digests, target) => {
-                        info!("TRACE_SYNC: Synchronize received num_digests={}", digests.len());
                         let now = SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .expect("Failed to measure time")
@@ -189,7 +188,7 @@ impl Synchronizer {
                         let execute_start = Instant::now();
                         let round = certificate.round();
                         let num_digests = certificate.header.payload.len();
-                        info!("TRACE_SYNC: Execute START for round={} num_digests={} pending={}", round, num_digests, self.pending.len());
+                        info!("TRACE_SYNC: Execute START for round={} num_digests={}", round, num_digests);
 
                         for (i, digest) in certificate.header.payload.keys().enumerate() {
                             info!("TRACE_SYNC: Execute digest {}/{} digest={:?} round={}", i+1, num_digests, digest, round);
@@ -202,7 +201,6 @@ impl Synchronizer {
                     },
                     
                     PrimaryWorkerMessage::Cleanup(round) => {
-                        info!("TRACE_SYNC: Cleanup received round={} pending={}", round, self.pending.len());
                         self.round = round;
 
                         if self.round < self.gc_depth {
@@ -228,13 +226,11 @@ impl Synchronizer {
                             .send(round)
                             .await
                             .expect("Failed to deliver new global order round");   
-                        info!("TRACE_SYNC: AdvanceRound delivered round={}", round);
                     }
                 },
 
                 Some(result) = waiting.next() => match result {
                     Ok(Some(digest)) => {
-                        info!("TRACE_SYNC: waiter resolved digest={}", digest);
                         self.pending.remove(&digest);
                     },
                     Ok(None) => {
@@ -256,7 +252,6 @@ impl Synchronizer {
                         }
                     }
                     if !retry.is_empty() {
-                        info!("TRACE_SYNC: timer retry {} sync requests pending={}", retry.len(), self.pending.len());
                         let addresses = self.committee
                             .others_workers(&self.name, &self.id)
                             .iter().map(|(_, address)| address.worker_to_worker)
