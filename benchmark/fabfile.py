@@ -126,6 +126,7 @@ def das(ctx, debug=False, username='mputnik'):
                 ).run(debug)
 
                 if ret._consensus_duration() <= 30:
+                    print(f"Repeat as consensus duration is: {ret._consensus_duration()}")
                     continue
 
                 print(ret.result())
