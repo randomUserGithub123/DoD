@@ -48,11 +48,11 @@ def das(ctx, debug=False, username='mputnik'):
 
     for faults, gamma, workers_per_node, nodes, runs, input_rate in [
         ### Impact of GAMMA ###
-        (1, 1.0, 1, 5, 1, 3000),
-        # (1, 0.9, 1, 6, 5, 3000),
-        # (1, 0.8, 1, 7, 5, 3000),
-        # (1, 0.7, 1, 11, 5, 3000),
-        # (1, 0.6, 1, 21, 5, 3000),
+        (1, 1.0, 1, 5, 5, 4000),
+        (1, 0.9, 1, 6, 5, 4000),
+        (1, 0.8, 1, 7, 5, 4000),
+        (1, 0.7, 1, 11, 5, 4000),
+        (1, 0.6, 1, 21, 5, 4000),
         # (1, 1.0, 1, 5, 5, 3000),
         #######################
         # (4, 1.0, 4, 17, 5, 500),
@@ -96,13 +96,13 @@ def das(ctx, debug=False, username='mputnik'):
             'duration': 60,
         }
         node_params = {
-            'header_size': 1_000,
-            'max_header_delay': 200,
+            'header_size': 512,
+            'max_header_delay': 1000,
             'gc_depth': 50,
-            'sync_retry_delay': 10_000,
+            'sync_retry_delay': 5_000,
             'sync_retry_nodes': 3,
-            'batch_size': 51_200,
-            'max_batch_delay': 200,
+            'batch_size': 4_000,
+            'max_batch_delay': 1000,
             'gamma': gamma,
             'execution_threadpool_size': 20,
         }
@@ -122,6 +122,9 @@ def das(ctx, debug=False, username='mputnik'):
                     node_params, 
                     username
                 ).run(debug)
+
+                if ret._consensus_duration() == 0:
+                    continue
 
                 print(ret.result())
                 ret.print(filename)
