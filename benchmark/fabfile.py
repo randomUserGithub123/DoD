@@ -125,7 +125,7 @@ def das(ctx, debug=False, username='mputnik'):
                     username
                 ).run(debug)
 
-                if ret._consensus_duration() <= 50:
+                if ret._consensus_duration() <= 30:
                     continue
 
                 print(ret.result())
