@@ -20,7 +20,7 @@ from benchmark.preserve import *
 
 USE_FAIRNESS_PARSER = True
 
-BANNED_NODES = ["node009", "node010", "node018", "node021", "node034", "node056"]
+BANNED_NODES = ["node009", "node010", "node014", "node018", "node021", "node034", "node056"]
 
 
 class DASBench:
