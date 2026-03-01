@@ -10,7 +10,7 @@ use futures::stream::StreamExt as _;
 // use futures::SinkExt;
 use std::sync::{Arc};
 use futures::lock::Mutex;
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use network::{SimpleSender};
 use primary::PrimaryWorkerMessage;
 use std::collections::HashMap;
@@ -56,7 +56,7 @@ pub struct Synchronizer {
     tx_global_order_round: Sender<Round>,
     /// A network sender to send requests to the other workers.
     network: SimpleSender,
-    /// Loosely keep track of the's round number (only used for cleanup).
+    /// Loosely keep track of the primary's round number (only used for cleanup).
     round: Round,
     /// Keeps the digests (of batches) that are waiting to be processed by the primary. Their
     /// processing will resume when we get the missing batches in the store or we no longer need them.
@@ -64,8 +64,6 @@ pub struct Synchronizer {
     pending: HashMap<Digest, (Round, Sender<()>, u128)>,
     /// Keeping track of the elements in the Execution Queue (on worker)
     exe_queue: ExecutionQueue,
-    /// Counter for tracking how many Execute messages processed
-    execute_count: u64,
 }
 
 impl Synchronizer {
@@ -103,7 +101,6 @@ impl Synchronizer {
                 round: Round::default(),
                 pending: HashMap::new(),
                 exe_queue,
-                execute_count: 0,
             }
             .run()
             .await;
@@ -133,27 +130,14 @@ impl Synchronizer {
         let timer = sleep(Duration::from_millis(TIMER_RESOLUTION));
         tokio::pin!(timer);
 
-        let run_start = Instant::now();
         info!("TRACE_SYNC: synchronizer run loop starting");
 
-        let mut last_heartbeat = Instant::now();
-        let mut msg_count: u64 = 0;
-
         loop {
-            // Heartbeat every 5 seconds
-            if last_heartbeat.elapsed().as_secs() >= 5 {
-                info!("TRACE_SYNC: HEARTBEAT uptime={:?} msg_count={} execute_count={} pending={} round={}", 
-                    run_start.elapsed(), msg_count, self.execute_count, self.pending.len(), self.round);
-                last_heartbeat = Instant::now();
-            }
-
             tokio::select! {
                 // Handle primary's messages.
-                Some(message) = self.rx_message.recv() => {
-                    msg_count += 1;
-                    match message {
+                Some(message) = self.rx_message.recv() => match message {
                     PrimaryWorkerMessage::Synchronize(digests, target) => {
-                        info!("TRACE_SYNC: Synchronize received num_digests={} target={:?}", digests.len(), target);
+                        info!("TRACE_SYNC: Synchronize received num_digests={}", digests.len());
                         let now = SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .expect("Failed to measure time")
@@ -196,41 +180,29 @@ impl Synchronizer {
                                 continue;
                             }
                         };
-                        let message = WorkerMessage::BatchRequest(missing.clone(), self.name);
+                        let message = WorkerMessage::BatchRequest(missing, self.name);
                         let serialized = bincode::serialize(&message).expect("Failed to serialize our own message");
-                        info!("TRACE_SYNC: Synchronize sending {} missing batch requests", missing.len());
                         self.network.send(address, Bytes::from(serialized)).await;
                     },
 
                     PrimaryWorkerMessage::Execute(certificate) => {
-                        self.execute_count += 1;
                         let execute_start = Instant::now();
                         let round = certificate.round();
                         let num_digests = certificate.header.payload.len();
-                        info!("TRACE_SYNC: Execute START #{} round={} num_digests={} (queue backlog pending={})", 
-                            self.execute_count, round, num_digests, self.pending.len());
+                        info!("TRACE_SYNC: Execute START for round={} num_digests={} pending={}", round, num_digests, self.pending.len());
 
                         for (i, digest) in certificate.header.payload.keys().enumerate() {
-                            info!("TRACE_SYNC: Execute digest {}/{} digest={:?} round={} exec_count={}", 
-                                i+1, num_digests, digest, round, self.execute_count);
+                            info!("TRACE_SYNC: Execute digest {}/{} digest={:?} round={}", i+1, num_digests, digest, round);
                             let digest_start = Instant::now();
                             self.exe_queue.execute(*digest).await;
-                            let digest_time = digest_start.elapsed();
-                            if digest_time.as_secs() >= 5 {
-                                warn!("TRACE_SYNC: Execute digest {}/{} VERY SLOW {:?} round={}", i+1, num_digests, digest_time, round);
-                            }
-                            info!("TRACE_SYNC: Execute digest {}/{} DONE in {:?} round={}", i+1, num_digests, digest_time, round);
+                            info!("TRACE_SYNC: Execute digest {}/{} DONE in {:?} round={}", i+1, num_digests, digest_start.elapsed(), round);
                         }
 
-                        let total_time = execute_start.elapsed();
-                        if total_time.as_secs() >= 10 {
-                            warn!("TRACE_SYNC: Execute ALL DONE SLOW for round={} total_time={:?} exec_count={}", round, total_time, self.execute_count);
-                        }
-                        info!("TRACE_SYNC: Execute ALL DONE for round={} total_time={:?} exec_count={}", round, total_time, self.execute_count);
+                        info!("TRACE_SYNC: Execute ALL DONE for round={} total_time={:?}", round, execute_start.elapsed());
                     },
                     
                     PrimaryWorkerMessage::Cleanup(round) => {
-                        info!("TRACE_SYNC: Cleanup received round={} (prev_round={}, pending={})", round, self.round, self.pending.len());
+                        info!("TRACE_SYNC: Cleanup received round={} pending={}", round, self.pending.len());
                         self.round = round;
 
                         if self.round < self.gc_depth {
@@ -238,20 +210,16 @@ impl Synchronizer {
                         }
 
                         let mut gc_round = self.round - self.gc_depth;
-                        let mut gc_count = 0;
                         for (r, handler, _) in self.pending.values() {
                             if r <= &gc_round {
                                 let _ = handler.send(()).await;
-                                gc_count += 1;
                             }
                         }
-                        let before = self.pending.len();
                         self.pending.retain(|_, (r, _, _)| r > &mut gc_round);
-                        info!("TRACE_SYNC: Cleanup gc_round={} cancelled={} removed={}", gc_round, gc_count, before - self.pending.len());
                     }
 
                     PrimaryWorkerMessage::AdvanceRound(round) => {
-                        info!("TRACE_SYNC: AdvanceRound received round={} (prev_round={})", round, self.round);
+                        info!("TRACE_SYNC: AdvanceRound received round={}", round);
                         self.tx_batch_round
                             .send(round)
                             .await
@@ -262,7 +230,7 @@ impl Synchronizer {
                             .expect("Failed to deliver new global order round");   
                         info!("TRACE_SYNC: AdvanceRound delivered round={}", round);
                     }
-                }},
+                },
 
                 Some(result) = waiting.next() => match result {
                     Ok(Some(digest)) => {
@@ -288,7 +256,7 @@ impl Synchronizer {
                         }
                     }
                     if !retry.is_empty() {
-                        info!("TRACE_SYNC: timer retry sending {} sync requests (pending={})", retry.len(), self.pending.len());
+                        info!("TRACE_SYNC: timer retry {} sync requests pending={}", retry.len(), self.pending.len());
                         let addresses = self.committee
                             .others_workers(&self.name, &self.id)
                             .iter().map(|(_, address)| address.worker_to_worker)

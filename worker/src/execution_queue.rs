@@ -55,18 +55,17 @@ impl ExecutionQueue {
         let read_start = Instant::now();
         match self.store.read(digest.to_vec()).await {
             Ok(Some(global_order_info)) => {
-                info!("TRACE_EQ: add_to_queue store.read OK in {:?} bytes={}", read_start.elapsed(), global_order_info.len());
-                let deser_start = Instant::now();
+                info!("TRACE_EQ: add_to_queue store.read OK in {:?}", read_start.elapsed());
                 match bincode::deserialize(&global_order_info).unwrap() {
                     WorkerMessage::GlobalOrderInfo(_global_order_graph, missed) => {
-                        info!("TRACE_EQ: add_to_queue deserialized in {:?}, missed_pairs={}", deser_start.elapsed(), missed.len());
+                        info!("TRACE_EQ: add_to_queue deserialized, missed_pairs={}", missed.len());
                         self.queue.push_back(QueueElement{ global_order_digest: digest, missed_pairs: missed, updated_edges: Vec::new()});
                     },
                     _ => panic!("PrimaryWorkerMessage::Execute : Unexpected batch"),
                 }
             }
             Ok(None) => {
-                warn!("TRACE_EQ: add_to_queue store.read returned None for digest={:?} in {:?}", digest, read_start.elapsed());
+                info!("TRACE_EQ: add_to_queue store.read returned None for digest={:?} in {:?}", digest, read_start.elapsed());
             },
             Err(e) => error!("TRACE_EQ: add_to_queue store.read error: {} in {:?}", e, read_start.elapsed()),
         }        
@@ -74,7 +73,7 @@ impl ExecutionQueue {
 
     pub async fn execute(&mut self, digest: Digest){
         let execute_start = Instant::now();
-        info!("TRACE_EQ: execute START digest={:?} current_queue_len={}", digest, self.queue.len());
+        info!("TRACE_EQ: execute START digest={:?}", digest);
 
         // add new element in the queue associated with this new digest
         self.add_to_queue(digest).await;
@@ -82,7 +81,6 @@ impl ExecutionQueue {
 
         // traverse the queue from front and update missing pairs if any
         let mut queue_idx = 0;
-        let missed_check_start = Instant::now();
         for element in self.queue.iter_mut() {
             if element.missed_pairs.is_empty(){
                 queue_idx += 1;
@@ -94,32 +92,18 @@ impl ExecutionQueue {
             let num_missed = element.missed_pairs.len();
             info!("TRACE_EQ: execute checking missed_pairs for queue_idx={} num_missed={}", queue_idx, num_missed);
 
-            let mut pair_idx = 0;
             for missed_pair in &element.missed_pairs{
+                info!("TRACE_EQ: execute locking missed_edge_manager for pair=({}, {})", missed_pair.0, missed_pair.1);
                 let lock_start = Instant::now();
-                info!("TRACE_EQ: execute LOCKING missed_edge_manager for pair {}/{} ({}, {}) queue_idx={}", 
-                    pair_idx+1, num_missed, missed_pair.0, missed_pair.1, queue_idx);
                 let mut missed_edge_manager_lock = self.missed_edge_manager.lock().await;
-                let lock_time = lock_start.elapsed();
-                if lock_time.as_millis() > 50 {
-                    warn!("TRACE_EQ: execute missed_edge_manager lock SLOW {:?} pair=({}, {})", lock_time, missed_pair.0, missed_pair.1);
-                }
+                info!("TRACE_EQ: execute got missed_edge_manager lock in {:?}", lock_start.elapsed());
 
-                let check_start = Instant::now();
                 if let Some(edge) = missed_edge_manager_lock.is_missing_edge_updated(missed_pair.0, missed_pair.1).await {
                     drop(missed_edge_manager_lock);
-                    info!("TRACE_EQ: execute pair ({}, {}) RESOLVED to edge ({}, {}) in {:?}", 
-                        missed_pair.0, missed_pair.1, edge.0, edge.1, check_start.elapsed());
                     updated_pairs.push((missed_pair.0, missed_pair.1));
                     updated_edges.push((edge.0, edge.1));
-                } else {
-                    drop(missed_edge_manager_lock);
-                }
-                pair_idx += 1;
+                } 
             }
-
-            info!("TRACE_EQ: execute queue_idx={} resolved {}/{} missed pairs in {:?}", 
-                queue_idx, updated_pairs.len(), num_missed, missed_check_start.elapsed());
 
             for pair in &updated_pairs{
                 element.missed_pairs.remove(pair);
@@ -130,7 +114,7 @@ impl ExecutionQueue {
             queue_idx += 1;
         }
 
-        info!("TRACE_EQ: execute done checking ALL missed pairs, elapsed={:?}", execute_start.elapsed());
+        info!("TRACE_EQ: execute done checking missed pairs, elapsed={:?}", execute_start.elapsed());
 
         // Execute global order if missed edges are found
         let mut n_elements_to_execute = 0;
@@ -139,12 +123,11 @@ impl ExecutionQueue {
                 n_elements_to_execute += 1;
             }
             else{
-                info!("TRACE_EQ: execute BLOCKED at queue_idx={} with {} remaining missed_pairs", n_elements_to_execute, element.missed_pairs.len());
                 break;
             }
         }
         
-        info!("TRACE_EQ: execute n_elements_to_execute={} queue_len={} elapsed={:?}", n_elements_to_execute, self.queue.len(), execute_start.elapsed());
+        info!("TRACE_EQ: execute n_elements_to_execute={} queue_len={}", n_elements_to_execute, self.queue.len());
 
         // remove queue elements and Execute global order if no more missed edges
         for exec_idx in 0..n_elements_to_execute{
@@ -155,30 +138,29 @@ impl ExecutionQueue {
 
             match self.store.read(queue_element.global_order_digest.to_vec()).await {
                 Ok(Some(global_order_info)) => {
-                    info!("TRACE_EQ: execute element {}/{} store.read OK in {:?} bytes={}", exec_idx+1, n_elements_to_execute, store_read_start.elapsed(), global_order_info.len());
+                    info!("TRACE_EQ: execute store.read OK in {:?}", store_read_start.elapsed());
                     match bincode::deserialize(&global_order_info).unwrap() {
                         WorkerMessage::GlobalOrderInfo(global_order_graph_serialized, _missed) => {
                             let deser_start = Instant::now();
                             let dag: DiGraphMap<Node, u8> = GlobalOrderGraph::get_dag_deserialized(global_order_graph_serialized);
                             
-                            info!("TRACE_EQ: execute element {}/{} deserialized DAG: nodes={} edges={} in {:?}", 
-                                exec_idx+1, n_elements_to_execute, dag.node_count(), dag.edge_count(), deser_start.elapsed());
+                            log::info!("FINALIZED!: {} (deserialized in {:?})", dag.node_count(), deser_start.elapsed());
                             
+                            info!("TRACE_EQ: execute launching ParallelExecution node_count={} edge_count={}", dag.node_count(), dag.edge_count());
                             let par_start = Instant::now();
                             let mut parallel_execution: ParallelExecution = ParallelExecution::new(dag, self.store.clone(), self.writer_store.clone(), self.sb_handler.clone(), self.execution_threadpool_size);
-                            info!("TRACE_EQ: execute element {}/{} LAUNCHING ParallelExecution", exec_idx+1, n_elements_to_execute);
                             parallel_execution.execute().await;
-                            info!("TRACE_EQ: execute element {}/{} ParallelExecution DONE in {:?}", exec_idx+1, n_elements_to_execute, par_start.elapsed());
+                            info!("TRACE_EQ: execute ParallelExecution DONE in {:?}", par_start.elapsed());
                         },
                         _ => panic!("PrimaryWorkerMessage::Execute : Unexpected global order graph at execution"),
                     }
                 }
-                Ok(None) => error!("TRACE_EQ: execute global_order_digest NOT FOUND in store for element {}/{}", exec_idx+1, n_elements_to_execute),
-                Err(e) => error!("TRACE_EQ: execute store error: {} for element {}/{}", e, exec_idx+1, n_elements_to_execute),
+                Ok(None) => error!("TRACE_EQ: execute global_order_digest NOT FOUND in store"),
+                Err(e) => error!("TRACE_EQ: execute store error: {}", e),
             } 
         }
 
-        info!("TRACE_EQ: execute ALL DONE total_elapsed={:?} remaining_queue_len={}", execute_start.elapsed(), self.queue.len());
+        info!("TRACE_EQ: execute ALL DONE total_elapsed={:?}", execute_start.elapsed());
     }
 }
 
@@ -230,6 +212,8 @@ impl ParallelExecution {
 
         // ============================================================
         // FIX #1: Early return for empty graphs.
+        // Previously this fell through to rx_done.recv().await which
+        // blocked forever because no worker ever sends on the channel.
         // ============================================================
         if total_nodes == 0 {
             info!("TRACE_PE: execute EMPTY_GRAPH — nothing to do, returning immediately");
@@ -244,7 +228,7 @@ impl ParallelExecution {
         }
 
         let zero_indeg_count = in_degree_map.values().filter(|&&d| d == 0).count();
-        info!("TRACE_PE: execute in_degree_map built, zero_indeg_nodes={} total_nodes={}", zero_indeg_count, total_nodes);
+        info!("TRACE_PE: execute in_degree_map built, zero_indeg_nodes={}", zero_indeg_count);
 
         let (tx_done, mut rx_done) = mpsc::unbounded_channel::<u64>();
     
@@ -272,7 +256,7 @@ impl ParallelExecution {
                 thread_pool.send_message(*node).await;
             }
         }
-        info!("TRACE_PE: execute scheduled {} initial zero-indeg nodes (total_nodes={})", scheduled_count, total_nodes);
+        info!("TRACE_PE: execute scheduled {} initial zero-indeg nodes", scheduled_count);
 
         if scheduled_count == 0 {
             error!("TRACE_PE: CYCLE_DETECTED no zero-indegree nodes in graph with {} nodes!", total_nodes);
@@ -282,30 +266,25 @@ impl ParallelExecution {
 
         let mut completed_count: usize = 0;
         let mut completed_set: HashSet<Node> = HashSet::with_capacity(total_nodes);
-        let mut last_progress_log = Instant::now();
-        let mut stall_check = Instant::now();
 
         while let Some(completed_id) = rx_done.recv().await {
             completed_count += 1;
             completed_set.insert(completed_id);
 
-            // Periodic progress logging (every 2 seconds or every 100 completions)
-            if last_progress_log.elapsed().as_secs() >= 2 || completed_count % 100 == 0 {
-                info!("TRACE_PE: PROGRESS completed={}/{} scheduled={} elapsed={:?}", 
-                    completed_count, total_nodes, scheduled_count, exec_start.elapsed());
-                last_progress_log = Instant::now();
-            }
+            info!("TRACE_PE: completed tx_uid={} completed={}/{} scheduled={} elapsed={:?}", 
+                completed_id, completed_count, total_nodes, scheduled_count, exec_start.elapsed());
 
             // All nodes done — normal exit
             if completed_count == total_nodes {
-                info!("TRACE_PE: execute ALL_COMPLETE completed={}/{} elapsed={:?}", completed_count, total_nodes, exec_start.elapsed());
+                info!("TRACE_PE: execute ALL_COMPLETE completed={}/{}", completed_count, total_nodes);
                 break;
             }
     
             // Decrement in-degree for neighbors and schedule any that become ready
-            let mut newly_scheduled = 0;
             for neighbor in self.global_order_graph.neighbors(completed_id) {
                 if completed_set.contains(&neighbor) || scheduled_set.contains(&neighbor) {
+                    // Already done or already in flight — skip
+                    // (can happen with diamond dependencies)
                     continue;
                 }
                 in_degree_map.entry(neighbor).and_modify(|degree| {
@@ -313,24 +292,19 @@ impl ParallelExecution {
                 });
                 if *in_degree_map.get(&neighbor).unwrap() == 0 {
                     scheduled_count += 1;
-                    newly_scheduled += 1;
                     scheduled_set.insert(neighbor);
                     thread_pool.send_message(neighbor).await;
                 }
             }
 
-            if newly_scheduled > 0 {
-                info!("TRACE_PE: completed tx_uid={} -> scheduled {} new nodes (total_scheduled={}, completed={})", 
-                    completed_id, newly_scheduled, scheduled_count, completed_count);
-            }
-
             // ============================================================
             // FIX #2: Handle disconnected components properly.
+            // When we've drained all reachable work but nodes remain,
+            // scan for nodes with in-degree 0 that belong to disconnected
+            // components and schedule them. This replaces the old early
+            // exit that silently dropped ~50% of transactions.
             // ============================================================
             if completed_count == scheduled_count && completed_count < total_nodes {
-                warn!("TRACE_PE: STALL_DETECTED completed==scheduled={} but total_nodes={}, scanning for disconnected components...", 
-                    completed_count, total_nodes);
-                
                 let mut found_new = 0;
                 for (node, deg) in &in_degree_map {
                     if *deg == 0 && !completed_set.contains(node) && !scheduled_set.contains(node) {
@@ -348,38 +322,19 @@ impl ParallelExecution {
                     // No new zero-indegree nodes — remaining nodes form cycles
                     error!("TRACE_PE: CYCLE_DETECTED {} unreachable nodes remain, completed={}/{}", 
                         total_nodes - completed_count, completed_count, total_nodes);
-                    
-                    // Dump remaining nodes with their in-degrees for debugging
-                    let mut remaining_nodes: Vec<(Node, usize)> = Vec::new();
-                    for (node, deg) in &in_degree_map {
-                        if !completed_set.contains(node) {
-                            remaining_nodes.push((*node, *deg));
-                        }
-                    }
-                    remaining_nodes.sort_by_key(|&(_, d)| d);
-                    let sample: Vec<_> = remaining_nodes.iter().take(20).collect();
-                    error!("TRACE_PE: CYCLE_SAMPLE first 20 remaining: {:?}", sample);
-                    
                     break;
                 }
-            }
-
-            // Stall detection: if no progress for 10 seconds, log warning
-            if stall_check.elapsed().as_secs() >= 10 {
-                warn!("TRACE_PE: STALL_WARNING no completion for 10s — completed={}/{} scheduled={} elapsed={:?}", 
-                    completed_count, total_nodes, scheduled_count, exec_start.elapsed());
-                stall_check = Instant::now();
             }
         }
 
         // Final correctness summary
         let dropped = total_nodes - completed_count;
         if dropped > 0 {
-            error!("TRACE_PE: COMPLETION_STATS total_nodes={} completed={} DROPPED={} scheduled={} elapsed={:?}", 
-                total_nodes, completed_count, dropped, scheduled_count, exec_start.elapsed());
+            error!("TRACE_PE: COMPLETION_STATS total_nodes={} completed={} DROPPED={} scheduled={}", 
+                total_nodes, completed_count, dropped, scheduled_count);
         } else {
-            info!("TRACE_PE: COMPLETION_STATS total_nodes={} completed={} dropped=0 scheduled={} elapsed={:?}", 
-                total_nodes, completed_count, scheduled_count, exec_start.elapsed());
+            info!("TRACE_PE: COMPLETION_STATS total_nodes={} completed={} dropped=0 scheduled={}", 
+                total_nodes, completed_count, scheduled_count);
         }
 
         info!("TRACE_PE: execute shutting down thread pool, elapsed={:?}", exec_start.elapsed());
