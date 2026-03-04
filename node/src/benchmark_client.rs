@@ -7,6 +7,7 @@ use futures::sink::SinkExt as _;
 use futures::StreamExt;
 use log::{info, warn};
 use rand::Rng;
+use rand::seq::SliceRandom;
 use std::net::SocketAddr;
 use tokio::net::TcpStream;
 use tokio::time::{interval, sleep, Duration, Instant};
@@ -187,36 +188,31 @@ impl Client {
                 "Transaction size must be at least 9 bytes",
             ));
         }
-        // let mut waiting: HashSet<u64> = HashSet::new();
         let waiting: SharedStore = Arc::new(Mutex::new(HashSet::new()));
 
-        // // connect to mempool
-        // let mut writers_readers: HashMap<&SocketAddr, (futures::stream::SplitSink<Framed<TcpStream, LengthDelimitedCodec>, Bytes>, futures::stream::SplitStream<Framed<TcpStream, LengthDelimitedCodec>>)> = HashMap::new();
-        let mut writers : HashMap<&SocketAddr, futures::stream::SplitSink<Framed<TcpStream, LengthDelimitedCodec>, Bytes>> = HashMap::new();
+        let mut writers : HashMap<SocketAddr, futures::stream::SplitSink<Framed<TcpStream, LengthDelimitedCodec>, Bytes>> = HashMap::new();
         for worker_addr_vec in self.shard_assignment.values(){
             for worker_address in worker_addr_vec{
+                if writers.contains_key(worker_address) {
+                    continue;
+                }
                 info!("worker_address = {:?}", worker_address);
                 let stream = TcpStream::connect(worker_address)
                     .await
                     .context(format!("failed to connect to {}", worker_address))?; 
                 let transport: Framed<TcpStream, LengthDelimitedCodec> = Framed::new(stream, LengthDelimitedCodec::new());
-                let (mut writer, mut reader) = transport.split();
-                writers.insert(worker_address, writer);
+                let (writer, mut reader) = transport.split();
+                writers.insert(*worker_address, writer);
 
                 // spawn a reading task
                 let waiting = waiting.clone();
                 tokio::spawn(
                     async move {
-                        read_socket(& mut reader, waiting).await;
+                        read_socket(&mut reader, waiting).await;
                     }
                 );
             }
         }
-
-        // Connect to the mempool.
-        // let stream = TcpStream::connect(self.target)
-        //     .await
-        //     .context(format!("failed to connect to {}", self.target))?;
 
         // Submit all transactions.
         let mut rng = rand::thread_rng();
@@ -224,13 +220,6 @@ impl Client {
         let mut r = rng.gen();
         let interval: tokio::time::Interval = interval(Duration::from_millis(BURST_DURATION));
         tokio::pin!(interval);
-
-        // let mut total_send_duration: u128 = 0;
-        // let mut total_send_count: u64 = 0;
-        // let mut average_send_duration: f64 = 0.0;
-        // let mut total_dep_duration: u128 = 0;
-        // let mut total_dep_count: u64 = 0;
-        // let mut average_dep_duration: f64 = 0.0;
 
         // NOTE: This log entry is used to compute performance.
         info!("Start sending transactions");
@@ -250,7 +239,7 @@ impl Client {
                 }
                 info!("for fairness Sending tx {}", tx_uid);
 
-                // get the target address besed on dependency
+                // get the target address based on dependency
                 let dependency: (char, Vec<u32>) = self.sb_handler.get_transaction_dependency(bytes.clone());
                 let mut target_addr: HashSet<SocketAddr> = HashSet::new();
                 for dep in &dependency.1{
@@ -263,12 +252,15 @@ impl Client {
                         target_addr.insert(*addr);
                     }
                 }
+
+                // Shuffle target addresses to avoid always sending to the same node first
+                let mut target_vec: Vec<SocketAddr> = target_addr.into_iter().collect();
+                target_vec.shuffle(&mut rng);
                 
-                for addr in target_addr {
+                for addr in target_vec {
                     let writer = writers.get_mut(&addr).unwrap();
                     info!("sending sub tx to addr = {:?}", addr);
                     let _ = writer.send(bytes.clone()).await;
-                    // break;
                 }
                 
             }
