@@ -132,12 +132,7 @@ class FairnessLogParser:
         samples = {int(s): self._to_posix(t) for t, s in tmp}
 
         tmp = findall(r'\[(.*Z) .* fairness Receiving tx ack (\d+)', log)
-        acks = {}
-        for t, s in tmp:
-            s_int = int(s)
-            ts = self._to_posix(t)
-            if s_int not in acks or ts < acks[s_int]:
-                acks[s_int] = ts  # Keep EARLIEST timestamp only
+        acks = {int(s): self._to_posix(t) for t, s in tmp}
 
         acks_count = len(acks)
 

@@ -1,19 +1,16 @@
 // use log::{info};
 use petgraph::graphmap::DiGraphMap;
 use petgraph::algo::kosaraju_scc;
-// use petgraph::algo::condensation;
-// use bytes::BufMut as _;
-// use bytes::BytesMut;
-// use bytes::Bytes;
-// use crypto::Digest;
 use smallbank::SmallBankTransactionHandler;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use log::info;
-// use debugtimer::DebugTimer;
-
 
 type Transaction = Vec<u8>;
 type Node = u64;
+
+// =============================================================================
+// LocalOrderGraph — UNCHANGED
+// =============================================================================
 
 #[derive(Clone)]
 pub struct LocalOrderGraph{
@@ -25,14 +22,12 @@ pub struct LocalOrderGraph{
 
 impl LocalOrderGraph{
     pub fn new(local_order: Vec<(Node, Transaction)>, sb_handler: SmallBankTransactionHandler) -> Self {
-        // info!("local order is received = {:?}", local_order);
         let mut dependencies: HashMap<Node, (char, Vec<u32>)> = HashMap::new();
         for order in &local_order{
             let id  = (*order).0;
             let dep = sb_handler.get_transaction_dependency((*order).1.clone().into());
             dependencies.insert(id, dep);
         }
-        // info!("size of input local order = {:?}", local_order.len());
 
         LocalOrderGraph{
             local_order: local_order,
@@ -42,18 +37,15 @@ impl LocalOrderGraph{
     }
 
     pub fn get_dag(&self) -> DiGraphMap<Node, u8>{
-        // info!("local order DAG creation start");
-
         // (1) Create an empty graph G=(V,E)
         let mut dag: DiGraphMap<Node, u8> = DiGraphMap::new();
 
         // (2) Add all the nodes into the empty graph, as per local order received
         for order in &self.local_order{
             let _node = dag.add_node((*order).0);
-            // info!("node added {:?} :: {:?}", (*order).0, node);
         }
 
-        // // Better time complexity with some space
+        // Better time complexity with some space
         let mut seen_deps: HashMap<u32, Vec<(Node, char)>> = HashMap::new();
         for (curr_digest, _tx) in &self.local_order{
             let curr_deps: &(char, Vec<u32>) = &self.dependencies[curr_digest];
@@ -98,12 +90,16 @@ impl LocalOrderGraph{
                         dag.add_edge(node, node_info[neighbor_idx], 1);
                     }
                 },
-                // _ => panic!("Unexpected message"),
             }
         }
         return dag;
     }
 }
+
+// =============================================================================
+// GlobalDependencyGraph — UNCHANGED
+// (Builds global graph from local orders; may contain cycles)
+// =============================================================================
 
 #[derive(Clone)]
 pub struct GlobalDependencyGraph{
@@ -115,13 +111,7 @@ pub struct GlobalDependencyGraph{
 impl GlobalDependencyGraph{
     pub fn new(local_order_graphs: Vec<DiGraphMap<Node, u8>>, fixed_tx_threshold: f32, pending_tx_threshold: f32) -> Self {
         info!("GlobalDependencyGraph::new fixed_tx_threshold = {:?}, pending_tx_threshold = {:?}", fixed_tx_threshold, pending_tx_threshold);
-        // info!("Local order graphs:");
-        // for (i, graph) in local_order_graphs.iter().enumerate() {
-        //     info!("Graph {}: {} nodes, {} edges", i, graph.node_count(), graph.edge_count());
-        //     info!("Nodes: {:?}", graph.nodes().collect::<Vec<_>>());
-        //     info!("Edges: {:?}", graph.all_edges().collect::<Vec<_>>());
-        // }
-        let edge_threshold = f32::min(fixed_tx_threshold, pending_tx_threshold) -1.0;
+        let edge_threshold = f32::min(fixed_tx_threshold, pending_tx_threshold) - 1.0;
         // (1) Create an empty graph G=(V,E)
         let mut dag: DiGraphMap<Node, u8> = DiGraphMap::new();
 
@@ -131,7 +121,6 @@ impl GlobalDependencyGraph{
         let mut loop_count:u64 = 0;
         for local_order_graph in &local_order_graphs{
             for node in local_order_graph.nodes(){
-                // info!("global_dependency_graph::new : tx = {:?}", node);
                 let count = *transaction_counts.entry(node).or_insert(0);
                 transaction_counts.insert(node, count+1);
                 loop_count = loop_count + 1;
@@ -142,13 +131,10 @@ impl GlobalDependencyGraph{
                 edge_counts.insert((from, to), edge_counts[&(from, to)]+1);
             }
         }
-        // info!("Loop count = {:?}", loop_count);
-        // info!("Transaction count = {:?}", transaction_counts.len());
 
         // (3) Find fixed and pending transactions and add them into the graph
         let mut fixed_transactions: HashSet<Node> = HashSet::new();
         for (&tx, &count) in &transaction_counts{
-            // info!("global_dependency_graph::new : tx = {:?}, count = {:?}", tx, count);
             if count as f32 >= fixed_tx_threshold || count as f32 >= pending_tx_threshold{
                 dag.add_node(tx);
             }
@@ -161,27 +147,6 @@ impl GlobalDependencyGraph{
         // (5) Find missing edges in this graph
         let mut missed_edges: HashMap<(Node, Node), u16> = HashMap::new();
         for (&(from, to), &count) in &edge_counts{
-            // let fwd_edge_count = count as f32;
-            // let rev_edge_count = edge_counts[&(to, from)] as f32;
-            // let min_thr = fixed_tx_threshold.min(pending_tx_threshold);
-            
-            // if fwd_edge_count<min_thr && rev_edge_count<min_thr{
-            //     missed_edges.insert((from,to), fwd_edge_count as u16);
-            //     missed_edges.insert((to, from), rev_edge_count as u16);
-            // }
-            // else{
-            //     dag.add_edge(from, to, 1);
-            // }
-
-            // if ((count as f32) >= fixed_tx_threshold || (count as f32) >= pending_tx_threshold) && count > edge_counts[&(to, from)]{
-            //     dag.add_edge(from, to, 1);
-            // }
-            // else if !((edge_counts[&(to, from)] as f32) >= fixed_tx_threshold || (edge_counts[&(to, from)] as f32) >= pending_tx_threshold){
-            //     // edge between 'from' and 'to' is missing
-            //     missed_edges.insert((from,to), count);
-            //     missed_edges.insert((to, from), edge_counts[&(to, from)]);
-            // }
-
             if ((count as f32) >= fixed_tx_threshold || (count as f32) >= pending_tx_threshold) && count > edge_counts[&(to, from)]{
                 dag.add_edge(from, to, 1);
             }
@@ -212,106 +177,396 @@ impl GlobalDependencyGraph{
     }
 }
 
-#[derive(Clone)]
-pub struct PrunedGraph{
-    pruned_graph:  DiGraphMap<Node, u8>,
+// =============================================================================
+// NEW: Condensation — Algorithm 2, Line 23
+//
+// Detects SCCs using Kosaraju's algorithm. Each SCC with >1 node (i.e., a
+// cycle) is linearized into a deterministic chain sorted by tx_uid. Inter-SCC
+// edges are rewired: tail(source_SCC) → head(target_SCC). The resulting graph
+// is guaranteed to be a DAG.
+//
+// Why sorted chains instead of opaque super-nodes:
+//   - The existing serialization format (each node = one u64) is preserved.
+//   - The execution threadpool, Kahn's scheduler, and store lookups all work
+//     unchanged — every node is still a single transaction.
+//   - Sorting by tx_uid is deterministic across all replicas.
+//   - The tradeoff (sequential intra-SCC execution) is acceptable because
+//     cyclically-dependent transactions have no meaningful parallel order.
+// =============================================================================
+
+/// Result of the condensation step. Carries the linearized DAG plus metadata
+/// needed by the pruning step to reason about SCCs.
+struct CondensationResult {
+    /// The linearized DAG — all cycles replaced with sorted chains.
+    dag: DiGraphMap<Node, u8>,
+    /// Sorted member list for each SCC (index = SCC id).
+    scc_members: Vec<Vec<Node>>,
+    /// Maps every node to the SCC it belongs to.
+    node_to_scc: HashMap<Node, usize>,
+    /// Whether each SCC contains at least one fixed transaction.
+    scc_is_fixed: Vec<bool>,
 }
 
-impl PrunedGraph{
-    pub fn new(global_dependency_graph: &DiGraphMap<Node, u8>, fixed_transactions: &HashSet<Node>) -> Self {
-        let strongely_connected_components = kosaraju_scc(global_dependency_graph);
-        let mut pruned_graph:  DiGraphMap<Node, u8> = global_dependency_graph.clone();
-        let mut idx: usize = strongely_connected_components.len()-1;
-        let mut count = 0;
+fn condense_graph(
+    graph: &DiGraphMap<Node, u8>,
+    fixed_transactions: &HashSet<Node>,
+) -> CondensationResult {
+    let sccs = kosaraju_scc(graph);
 
-        while strongely_connected_components.len() > 0 && count<strongely_connected_components.len(){
-            let mut is_fixed: bool = false;
-            for node in &strongely_connected_components[idx]{
-                if fixed_transactions.contains(node){
-                    is_fixed = true;
-                    break;
-                }
-            }
-            if is_fixed{
-                break;
-            }
-            // All pending transactions are found in this scc : remove these
-            for &node in &strongely_connected_components[idx]{
-                pruned_graph.remove_node(node);
-            }
-            idx -= 1;
-            count += 1;
-        } 
-        
+    let mut node_to_scc: HashMap<Node, usize> = HashMap::new();
+    let mut scc_members: Vec<Vec<Node>> = Vec::new();
+    let mut scc_is_fixed: Vec<bool> = Vec::new();
 
-        PrunedGraph{
-            pruned_graph: pruned_graph,
+    for (i, scc) in sccs.iter().enumerate() {
+        // Sort members deterministically by tx_uid so all replicas agree
+        let mut sorted = scc.clone();
+        sorted.sort();
+
+        let is_fixed = sorted.iter().any(|n| fixed_transactions.contains(n));
+
+        for &node in &sorted {
+            node_to_scc.insert(node, i);
+        }
+
+        scc_members.push(sorted);
+        scc_is_fixed.push(is_fixed);
+    }
+
+    // ---- Build the linearized DAG ----
+    let mut dag: DiGraphMap<Node, u8> = DiGraphMap::new();
+
+    // Add every node (preserve the full vertex set)
+    for node in graph.nodes() {
+        dag.add_node(node);
+    }
+
+    // Intra-SCC: replace cycle with a sorted chain
+    for members in &scc_members {
+        if members.len() > 1 {
+            info!(
+                "CONDENSE: linearizing SCC of size {} — chain: {:?}",
+                members.len(),
+                members
+            );
+            for i in 0..members.len() - 1 {
+                dag.add_edge(members[i], members[i + 1], 1);
+            }
         }
     }
 
-    pub fn get_dag(&self) -> DiGraphMap<Node, u8>{
+    // Inter-SCC: tail(source) → head(target), deduplicated at the SCC-pair level
+    let mut added_scc_pairs: HashSet<(usize, usize)> = HashSet::new();
+    for (from, to, _) in graph.all_edges() {
+        let from_scc = node_to_scc[&from];
+        let to_scc = node_to_scc[&to];
+        if from_scc != to_scc && added_scc_pairs.insert((from_scc, to_scc)) {
+            let from_tail = *scc_members[from_scc].last().unwrap();
+            let to_head = scc_members[to_scc][0];
+            dag.add_edge(from_tail, to_head, 1);
+        }
+    }
+
+    CondensationResult {
+        dag,
+        scc_members,
+        node_to_scc,
+        scc_is_fixed,
+    }
+}
+
+// =============================================================================
+// UPDATED: Pruning — Algorithm 2, Lines 24-30
+//
+// The paper says: for every *pending* vertex u in the condensation graph, if
+// there is no *fixed* vertex v such that (u, v) ∈ E^C, remove u and all its
+// edges. A vertex (SCC) is "pending" if it contains zero fixed transactions.
+//
+// The old implementation only removed trailing all-pending SCCs from the end
+// of the topological order and stopped at the first fixed SCC, missing pending
+// SCCs elsewhere in the graph.
+// =============================================================================
+
+#[derive(Clone)]
+pub struct PrunedGraph {
+    pruned_graph: DiGraphMap<Node, u8>,
+}
+
+impl PrunedGraph {
+    /// Prune pending SCCs that have no direct outgoing edge to a fixed SCC in
+    /// the condensation graph (Algorithm 2, lines 24-27).
+    pub fn new(condensation: &CondensationResult) -> Self {
+        let mut pruned_graph = condensation.dag.clone();
+        let num_sccs = condensation.scc_members.len();
+
+        // Build SCC-level successor map from the linearized DAG edges
+        let mut scc_successors: HashMap<usize, HashSet<usize>> = HashMap::new();
+        for (from, to, _) in condensation.dag.all_edges() {
+            let from_scc = condensation.node_to_scc[&from];
+            let to_scc = condensation.node_to_scc[&to];
+            if from_scc != to_scc {
+                scc_successors.entry(from_scc).or_default().insert(to_scc);
+            }
+        }
+
+        // For each pending SCC, check for a direct outgoing edge to a fixed SCC
+        for scc_idx in 0..num_sccs {
+            if condensation.scc_is_fixed[scc_idx] {
+                continue; // Fixed SCCs are always kept
+            }
+
+            let has_fixed_successor = scc_successors
+                .get(&scc_idx)
+                .map(|succs| succs.iter().any(|&s| condensation.scc_is_fixed[s]))
+                .unwrap_or(false);
+
+            if !has_fixed_successor {
+                info!(
+                    "PRUNE: removing pending SCC {} with {} members: {:?}",
+                    scc_idx,
+                    condensation.scc_members[scc_idx].len(),
+                    condensation.scc_members[scc_idx]
+                );
+                for &node in &condensation.scc_members[scc_idx] {
+                    pruned_graph.remove_node(node);
+                }
+            }
+        }
+
+        PrunedGraph { pruned_graph }
+    }
+
+    pub fn get_dag(&self) -> DiGraphMap<Node, u8> {
         return self.pruned_graph.clone();
     }
 }
 
-#[derive(Clone)]
-pub struct GlobalOrderGraph{
-    global_order_graph:  DiGraphMap<Node, u8>,
-    missed_edges: HashMap<(Node, Node), u16>,
-}
+// =============================================================================
+// NEW: Transitive Reduction — Algorithm 2, Line 31
+//
+// Given a DAG G^C, produce the minimal subgraph G^T that preserves all
+// reachability relationships. An edge (u, v) is redundant iff v is reachable
+// from u through some other path of length ≥ 2.
+//
+// Complexity: O(|E| · (|V| + |E|)) — for each edge, one BFS. This is
+// acceptable for the per-round transaction graph sizes in this system.
+// For very large graphs, an O(|V|^2) matrix-based approach could be used.
+// =============================================================================
 
-impl GlobalOrderGraph{
-    pub fn new(local_order_graphs: Vec<DiGraphMap<Node, u8>>, fixed_tx_threshold: f32, pending_tx_threshold: f32) -> Self {
-        // info!("In new global order graph");
-        let global_dependency_graph: GlobalDependencyGraph = GlobalDependencyGraph::new(local_order_graphs, fixed_tx_threshold, pending_tx_threshold);
-        let pruned_graph: PrunedGraph = PrunedGraph::new(global_dependency_graph.get_dag(), global_dependency_graph.get_fixed_transactions());
-        let global_order_graph: DiGraphMap<Node, u8> = pruned_graph.get_dag();
-        let missed_edges: HashMap<(Node, Node), u16> = global_dependency_graph.get_missed_edges().clone();
+fn transitive_reduction(dag: &DiGraphMap<Node, u8>) -> DiGraphMap<Node, u8> {
+    // Collect all edges up front; we check reachability against the ORIGINAL
+    // graph so that removing one edge doesn't affect checks for others.
+    let edges: Vec<(Node, Node)> = dag.all_edges().map(|(a, b, _)| (a, b)).collect();
 
-        GlobalOrderGraph{
-            global_order_graph: global_order_graph,
-            missed_edges: missed_edges,
+    let mut result = dag.clone();
+
+    for &(u, v) in &edges {
+        // Is v reachable from u through some *other* neighbor in the original graph?
+        // If yes, the direct edge (u, v) is redundant.
+        let mut redundant = false;
+        for neighbor in dag.neighbors(u) {
+            if neighbor != v && bfs_reachable(dag, neighbor, v) {
+                redundant = true;
+                break;
+            }
+        }
+        if redundant {
+            result.remove_edge(u, v);
         }
     }
 
-    pub fn get_dag(&self) -> DiGraphMap<Node, u8>{
+    result
+}
+
+/// BFS reachability check: returns true if `target` is reachable from `start`.
+fn bfs_reachable(dag: &DiGraphMap<Node, u8>, start: Node, target: Node) -> bool {
+    if start == target {
+        return true;
+    }
+    let mut visited: HashSet<Node> = HashSet::new();
+    let mut queue: VecDeque<Node> = VecDeque::new();
+    queue.push_back(start);
+    visited.insert(start);
+
+    while let Some(current) = queue.pop_front() {
+        for neighbor in dag.neighbors(current) {
+            if neighbor == target {
+                return true;
+            }
+            if visited.insert(neighbor) {
+                queue.push_back(neighbor);
+            }
+        }
+    }
+    false
+}
+
+// =============================================================================
+// NEW (optional): Missing-edge recomputation after condensation + pruning
+//
+// Algorithm 2, Lines 28-30: "for every pair of data-dependent transactions
+// t and t' with no edge: if t and t' are in two different vertices of V^C:
+// Add (t, t') to M."
+//
+// This updates the missing-edge set to reflect the condensed/pruned graph.
+// Pairs within the same SCC do NOT need tracking (their order is resolved).
+// =============================================================================
+
+/// Recompute missing edge pairs relative to the condensed+pruned graph.
+/// Only keeps pairs where both nodes survive pruning and belong to different
+/// SCCs. Pairs within the same SCC are dropped (their order is already
+/// determined by the intra-SCC chain).
+fn recompute_missed_edges(
+    original_missed: &HashMap<(Node, Node), u16>,
+    pruned_dag: &DiGraphMap<Node, u8>,
+    node_to_scc: &HashMap<Node, usize>,
+) -> HashMap<(Node, Node), u16> {
+    let mut result: HashMap<(Node, Node), u16> = HashMap::new();
+
+    for (&(from, to), &count) in original_missed {
+        // Both nodes must still exist in the pruned graph
+        if !pruned_dag.contains_node(from) || !pruned_dag.contains_node(to) {
+            continue;
+        }
+        // Pairs within the same SCC have their order determined by the chain
+        if let (Some(&scc_from), Some(&scc_to)) = (node_to_scc.get(&from), node_to_scc.get(&to)) {
+            if scc_from == scc_to {
+                continue; // Same SCC — order is resolved
+            }
+        }
+        result.insert((from, to), count);
+    }
+
+    result
+}
+
+// =============================================================================
+// UPDATED: GlobalOrderGraph
+//
+// Full pipeline per Algorithm 2:
+//   1. GlobalDependencyGraph  — build graph from local orders (may have cycles)
+//   2. condense_graph         — SCC detection + cycle linearization (Line 23)
+//   3. PrunedGraph::new       — remove pending SCCs with no fixed successor (Lines 24-30)
+//   4. recompute_missed_edges — drop intra-SCC pairs, keep only cross-SCC (Lines 28-30)
+//   5. transitive_reduction   — remove redundant edges (Line 31)
+// =============================================================================
+
+#[derive(Clone)]
+pub struct GlobalOrderGraph {
+    global_order_graph: DiGraphMap<Node, u8>,
+    missed_edges: HashMap<(Node, Node), u16>,
+}
+
+impl GlobalOrderGraph {
+    pub fn new(
+        local_order_graphs: Vec<DiGraphMap<Node, u8>>,
+        fixed_tx_threshold: f32,
+        pending_tx_threshold: f32,
+    ) -> Self {
+        // Step 1: Build global dependency graph (may contain cycles)
+        let global_dep = GlobalDependencyGraph::new(
+            local_order_graphs,
+            fixed_tx_threshold,
+            pending_tx_threshold,
+        );
+
+        info!(
+            "GlobalOrderGraph: dependency graph built — nodes={} edges={} missed_edge_pairs={}",
+            global_dep.get_dag().node_count(),
+            global_dep.get_dag().edge_count(),
+            global_dep.get_missed_edges().len(),
+        );
+
+        // Step 2: Condensation — detect SCCs, linearize cycles into sorted chains
+        let condensation = condense_graph(
+            global_dep.get_dag(),
+            global_dep.get_fixed_transactions(),
+        );
+
+        info!(
+            "GlobalOrderGraph: condensation done — {} SCCs, linearized DAG nodes={} edges={}",
+            condensation.scc_members.len(),
+            condensation.dag.node_count(),
+            condensation.dag.edge_count(),
+        );
+
+        // Step 3: Pruning — remove pending SCCs with no direct fixed successor
+        let pruned = PrunedGraph::new(&condensation);
+        let pruned_dag = pruned.get_dag();
+
+        info!(
+            "GlobalOrderGraph: pruning done — nodes={} edges={}",
+            pruned_dag.node_count(),
+            pruned_dag.edge_count(),
+        );
+
+        // Step 4: Recompute missed edges (drop intra-SCC pairs)
+        let missed_edges = recompute_missed_edges(
+            global_dep.get_missed_edges(),
+            &pruned_dag,
+            &condensation.node_to_scc,
+        );
+
+        info!(
+            "GlobalOrderGraph: missed edges after recomputation = {}",
+            missed_edges.len(),
+        );
+
+        // Step 5: Transitive reduction — remove redundant edges
+        let reduced_dag = transitive_reduction(&pruned_dag);
+
+        info!(
+            "GlobalOrderGraph: transitive reduction done — nodes={} edges={} (removed {} redundant edges)",
+            reduced_dag.node_count(),
+            reduced_dag.edge_count(),
+            pruned_dag.edge_count() - reduced_dag.edge_count(),
+        );
+
+        GlobalOrderGraph {
+            global_order_graph: reduced_dag,
+            missed_edges,
+        }
+    }
+
+    pub fn get_dag(&self) -> DiGraphMap<Node, u8> {
         return self.global_order_graph.clone();
     }
 
-    pub fn get_dag_serialized(&self) -> Vec<Vec<u8>>{
+    pub fn get_dag_serialized(&self) -> Vec<Vec<u8>> {
         let dag: DiGraphMap<Node, u8> = self.get_dag();
         let mut dag_vec: Vec<Vec<u8>> = Vec::new();
 
-        for node in dag.nodes(){
+        for node in dag.nodes() {
             let mut node_vec: Vec<Node> = Vec::new();
             node_vec.push(node);
-            for neighbor in dag.neighbors(node){
+            for neighbor in dag.neighbors(node) {
                 node_vec.push(neighbor);
             }
-            dag_vec.push(bincode::serialize(&node_vec).expect("Failed to serialize global order graph"));
+            dag_vec.push(
+                bincode::serialize(&node_vec)
+                    .expect("Failed to serialize global order graph"),
+            );
         }
 
         return dag_vec;
     }
 
-    pub fn get_dag_deserialized(serialized_dag: Vec<Vec<u8>>) -> DiGraphMap<Node, u8>{
+    pub fn get_dag_deserialized(serialized_dag: Vec<Vec<u8>>) -> DiGraphMap<Node, u8> {
         let mut dag: DiGraphMap<Node, u8> = DiGraphMap::new();
-        for serialized_node_info in serialized_dag{
+        for serialized_node_info in serialized_dag {
             match bincode::deserialize::<Vec<Node>>(&serialized_node_info).unwrap() {
                 node_info => {
                     let node: Node = node_info[0];
                     dag.add_node(node);
-                    for neighbor_idx in 1..node_info.len(){
+                    for neighbor_idx in 1..node_info.len() {
                         dag.add_edge(node, node_info[neighbor_idx], 1);
                     }
                 },
-                // _ => panic!("Unexpected message"),
             }
         }
         return dag;
     }
 
-    pub fn get_missed_edges(&self) -> HashMap<(Node, Node), u16>{
+    pub fn get_missed_edges(&self) -> HashMap<(Node, Node), u16> {
         return self.missed_edges.clone();
     }
 }
@@ -319,15 +574,4 @@ impl GlobalOrderGraph{
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
 }
