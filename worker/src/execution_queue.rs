@@ -142,7 +142,7 @@ impl ExecutionQueue {
                     match bincode::deserialize(&global_order_info).unwrap() {
                         WorkerMessage::GlobalOrderInfo(global_order_graph_serialized, _missed) => {
                             let deser_start = Instant::now();
-                            let dag: DiGraphMap<Node, u8> = GlobalOrderGraph::get_dag_deserialized(global_order_graph_serialized);
+                            let mut dag: DiGraphMap<Node, u8> = GlobalOrderGraph::get_dag_deserialized(global_order_graph_serialized);
 
                             for (from, to) in &queue_element.updated_edges {
                                 dag.add_edge(*from, *to, 1);
